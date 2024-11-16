@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "1004375251528",
+    "project_id": "mindkeeper-75ebf",
+    "storage_bucket": "mindkeeper-75ebf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1004375251528:android:416ca8ece01cf95745167d",
+        "android_client_info": {
+          "package_name": "com.example.reminder_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1004375251528-a4kia0351mbq697iu7v8o77c9lkoigle.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8xbPyFx0XHDjyeB7q0RVt6ZVKLW5cfnw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1004375251528-a4kia0351mbq697iu7v8o77c9lkoigle.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1004375251528:android:044590e2baa22b0845167d",
+        "android_client_info": {
+          "package_name": "com.example.scheduler_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1004375251528-a4kia0351mbq697iu7v8o77c9lkoigle.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8xbPyFx0XHDjyeB7q0RVt6ZVKLW5cfnw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1004375251528-a4kia0351mbq697iu7v8o77c9lkoigle.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

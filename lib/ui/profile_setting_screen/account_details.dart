@@ -1,5 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:reminder_app/models/user_model.dart';
 import 'package:reminder_app/services/auth_service.dart';
 import '../../app/app_export.dart';
 import '../../widgets/appstyle.dart';
@@ -17,6 +17,19 @@ class AccountDetails extends StatefulWidget {
 class _AccountSettingScreenState extends State<AccountDetails> {
   final AuthService _authService = AuthService();
   final name = TextEditingController();
+  String currentUsername = "";
+
+  late String uid;
+
+  @override
+  void initState() {
+    super.initState();
+    _authService.user.listen((user) {
+      setState(() {
+        currentUsername = user?.displayName ?? "";
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +132,7 @@ class _AccountSettingScreenState extends State<AccountDetails> {
   _buildUsernameSetting() {
     return InkWell(
       onTap: () {
-        Navigator.pushNamed(context, AppRoutes.accountDetails);
+        _changeUsername(context);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -133,24 +146,19 @@ class _AccountSettingScreenState extends State<AccountDetails> {
             ),
             Row(
               children: [
-                InkWell(
-                  onTap: () {
-                    _changeUsername(context);
+                StreamBuilder(
+                  stream: _authService.user,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return ReusableText(
+                        text: currentUsername,
+                        style:
+                            appStyle(14, appTheme.gray400, FontWeight.normal),
+                      );
+                    } else {
+                      return const CircularProgressIndicator();
+                    }
                   },
-                  child: StreamBuilder(
-                    stream: _authService.user,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        return ReusableText(
-                          text: snapshot.data?.displayName ?? '',
-                          style:
-                              appStyle(14, appTheme.gray400, FontWeight.normal),
-                        );
-                      } else {
-                        return const CircularProgressIndicator();
-                      }
-                    },
-                  ),
                 ),
                 const SizedBox(width: 10),
                 Icon(Icons.arrow_forward_ios,
@@ -185,7 +193,7 @@ class _AccountSettingScreenState extends State<AccountDetails> {
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
                         return ReusableText(
-                          text: snapshot.data?.email ?? '',
+                          text: snapshot.data!.email ?? '',
                           style:
                               appStyle(14, appTheme.gray400, FontWeight.normal),
                         );
@@ -225,7 +233,7 @@ class _AccountSettingScreenState extends State<AccountDetails> {
     );
   }
 
-  void _changeUsername(BuildContext context) {
+  void _changeUsername(BuildContext context) async {
     showDialog(
       context: context,
       builder: (context) {
@@ -244,8 +252,15 @@ class _AccountSettingScreenState extends State<AccountDetails> {
             ),
             TextButton(
               onPressed: () {
-                _authService.changeUsername(name.text);
-                Navigator.pop(context);
+                String newUsername = name.text;
+
+                setState(() {
+                  currentUsername = newUsername;
+                });
+
+                _authService.changeUsername(newUsername);
+
+                Navigator.pop(context); // Close dialog
               },
               child: const Text('Save'),
             ),

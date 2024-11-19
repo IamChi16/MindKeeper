@@ -301,7 +301,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   onTapArrowLeftone(BuildContext context) {
     Navigator.pop(context);
   }
-
   _signUp() async {
     String res = await _auth.createUser(
         email: _email.text,

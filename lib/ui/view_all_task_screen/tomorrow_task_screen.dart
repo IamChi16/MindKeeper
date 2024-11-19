@@ -2,13 +2,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:provider/provider.dart';
 import 'package:reminder_app/models/tasks_model.dart';
-import 'package:intl/intl.dart';
 import 'package:reminder_app/services/database_service.dart';
 import '../../app/app_export.dart';
 import '../../widgets/appstyle.dart';
+import '../../widgets/counter_notifier.dart';
 import '../../widgets/custom_search_view.dart';
+import '../../widgets/priority_widget.dart';
 import '../../widgets/reusable_text.dart';
+import '../task_screen/edit_task_screen.dart';
 
 class TomorrowTask extends StatefulWidget {
   const TomorrowTask({super.key});
@@ -24,6 +27,7 @@ class _TomorrowTaskState extends State<TomorrowTask> {
   late String uid;
   final DatabaseService _databaseService = DatabaseService();
   final TextEditingController search = TextEditingController();
+  String selectedPriority = 'default';
   bool isDone = false;
 
   @override
@@ -32,230 +36,275 @@ class _TomorrowTaskState extends State<TomorrowTask> {
     uid = FirebaseAuth.instance.currentUser!.uid;
   }
 
+  Future<void> _showPriorityDialog(BuildContext context, Task? task) async {
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return PriorityDialog(
+          onPrioritySelected: (priority) {
+            selectedPriority = priority;
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-            iconSize: 20,
+    return ChangeNotifierProvider(
+      create: (context) => CounterNotifier(),
+      // builder: (context, child) {
+      //   return FloatingActionButton(onPressed: () {
+      //     context.read<CounterNotifier>().increment();
+      //   },);
+      // },
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+              iconSize: 20,
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: appTheme.whiteA700,
+              )),
+          title: Text(
+            "Tomorrow Task",
+            style: appStyle(18, Colors.white, FontWeight.w600),
+          ),
+          centerTitle: true,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(80),
+            child: Column(
+              children: [
+                const SizedBox(height: 15),
+                CustomSearchView(
+                  controller: search,
+                  hintText: "Search",
+                  hintStyle:
+                      appStyle(14, appTheme.gray50001, FontWeight.normal),
+                  onChanged: (value) {},
+                  width: 350,
+                ),
+              ],
+            ),
+          ),
+        ),
+        floatingActionButton: Visibility(
+          visible: show,
+          child: FloatingActionButton(
             onPressed: () {
-              Navigator.pop(context);
+              _showTaskDialog(context);
+              // Navigator.of(context).push(
+              //     MaterialPageRoute(builder: (context) => const AddTaskScreen()));
             },
-            icon: Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: appTheme.whiteA700,
-            )),
-        title: Text(
-          "Today",
-          style: appStyle(18, Colors.white, FontWeight.w600),
-        ),
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(80),
-          child: Column(
-            children: [
-              const SizedBox(height: 15),
-              CustomSearchView(
-                controller: search,
-                hintText: "Search",
-                hintStyle: appStyle(14, appTheme.gray50001, FontWeight.normal),
-                onChanged: (value) {},
-                width: 350,
-              ),
-            ],
+            backgroundColor: appTheme.indigo30001,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30.0),
+            ),
+            child: Icon(Icons.add, color: appTheme.whiteA700),
           ),
         ),
-      ),
-      floatingActionButton: Visibility(
-        visible: show,
-        child: FloatingActionButton(
-          onPressed: () {
-            _showTaskDialog(context);
-            // Navigator.of(context).push(
-            //     MaterialPageRoute(builder: (context) => const AddTaskScreen()));
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        body: NotificationListener<UserScrollNotification>(
+          onNotification: (notification) {
+            if (notification.direction == ScrollDirection.reverse) {
+              setState(() {
+                show = false;
+              });
+            } else if (notification.direction == ScrollDirection.forward) {
+              setState(() {
+                show = true;
+              });
+            }
+            return true;
           },
-          backgroundColor: appTheme.indigo30001,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30.0),
-          ),
-          child: Icon(Icons.add, color: appTheme.whiteA700),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      body: NotificationListener<UserScrollNotification>(
-        onNotification: (notification) {
-          if (notification.direction == ScrollDirection.reverse) {
-            setState(() {
-              show = false;
-            });
-          } else if (notification.direction == ScrollDirection.forward) {
-            setState(() {
-              show = true;
-            });
-          }
-          return true;
-        },
-        child: StreamBuilder<List<Task>>(
-            stream: _databaseService.tomorrowtasks,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                List<Task> taskList = snapshot.data!;
-                return ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: taskList.length,
-                    itemBuilder: (context, index) {
-                      Task tasks = taskList[index];
-                      return Slidable(
-                        key: ValueKey(tasks.id),
-                        endActionPane: ActionPane(
-                          motion: DrawerMotion(),
-                          children: [
-                            SlidableAction(
-                              backgroundColor: Colors.transparent,
-                              foregroundColor: appTheme.whiteA700,
-                              onPressed: (context) {
-                                _showPriorityDialog(context, tasks);
-                              },
-                              icon: Icons.flag_rounded,
-                              label: 'Priority',
-                            ),
-                            SlidableAction(
-                              backgroundColor: Colors.transparent,
-                              foregroundColor: appTheme.red500,
-                              onPressed: (context) async {
-                                _showDeleteConfirmationDialog(context, tasks);
-                              },
-                              icon: Icons.delete_rounded,
-                              label: 'Delete',
-                            ),
-                          ],
-                        ),
-                        startActionPane: ActionPane(
-                          motion: DrawerMotion(),
-                          children: [
-                            SlidableAction(
-                              backgroundColor: Colors.transparent,
-                              foregroundColor: appTheme.yellowA900,
-                              onPressed: (context) {
-                                _showTaskDialog(context, task: tasks);
-                              },
-                              icon: Icons.edit_rounded,
-                              label: 'Edit',
-                            ),
-                          ],
-                        ),
-                        child: Container(
-                          margin: const EdgeInsets.only(
-                              top: 25, left: 25, right: 25),
-                          padding: const EdgeInsets.fromLTRB(15, 15, 5, 15),
-                          decoration: BoxDecoration(
-                            color: appTheme.indigo30001.withOpacity(0.16),
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(10)),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: StreamBuilder<List<Task>>(
+              stream: _databaseService.tomorrowtasks,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  List<Task> taskList = snapshot.data!;
+                  return ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: taskList.length,
+                      itemBuilder: (context, index) {
+                        Task tasks = taskList[index];
+                        return Slidable(
+                          key: ValueKey(tasks.id),
+                          endActionPane: ActionPane(
+                            motion: DrawerMotion(),
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              SlidableAction(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: appTheme.whiteA700,
+                                onPressed: (context) async {
+                                  await _showPriorityDialog(context, tasks);
+                                  await _databaseService.updateTaskPriority(
+                                      tasks.id, selectedPriority);
+                                  setState(() {
+                                    tasks.priority = selectedPriority;
+                                  });
+                                },
+                                icon: Icons.flag_rounded,
+                                label: 'Priority',
+                              ),
+                              SlidableAction(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: appTheme.red500,
+                                onPressed: (context) async {
+                                  _showDeleteConfirmationDialog(context, tasks);
+                                },
+                                icon: Icons.delete_rounded,
+                                label: 'Delete',
+                              ),
+                            ],
+                          ),
+                          startActionPane: ActionPane(
+                            motion: DrawerMotion(),
+                            children: [
+                              SlidableAction(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: appTheme.yellowA900,
+                                onPressed: (context) {
+                                  _showTaskDialog(context, task: tasks);
+                                },
+                                icon: Icons.edit_rounded,
+                                label: 'Edit',
+                              ),
+                            ],
+                          ),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(context,
+                                  MaterialPageRoute(builder: (context) {
+                                return EditTask(
+                                  task: tasks,
+                                );
+                              }));
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(
+                                  top: 25, left: 25, right: 25),
+                              padding: const EdgeInsets.fromLTRB(15, 15, 5, 15),
+                              decoration: BoxDecoration(
+                                color: appTheme.indigo30001.withOpacity(0.16),
+                                borderRadius:
+                                    const BorderRadius.all(Radius.circular(10)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      ReusableText(
-                                          text: tasks.title,
-                                          style: appStyle(
-                                              16,
-                                              appTheme.whiteA700,
-                                              FontWeight.w600)),
-                                      const SizedBox(width: 10),
-                                      Icon(
-                                        Icons.flag_rounded,
-                                        size: 20,
-                                        color: tasks.priority == 'high'
-                                            ? appTheme.red500
-                                            : tasks.priority == 'medium'
-                                                ? appTheme.yellowA900
-                                                : tasks.priority == 'low'
-                                                    ? appTheme.teal300
-                                                    : appTheme.indigoA100,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
                                           ReusableText(
-                                              text: tasks.description,
+                                              text: tasks.title,
                                               style: appStyle(
-                                                  15,
+                                                  16,
                                                   appTheme.whiteA700,
-                                                  FontWeight.normal)),
-                                          const SizedBox(width: 15),
-                                          Icon(Icons.calendar_month_rounded,
-                                              color: tasks.priority == 'high'
-                                                  ? appTheme.red500
-                                                  : tasks.priority == 'medium'
-                                                      ? appTheme.yellowA900
-                                                      : tasks.priority == 'low'
-                                                          ? appTheme.teal300
-                                                          : appTheme.indigoA100,
-                                              size: 20),
-                                          Text(tasks.duedate,
-                                              style: appStyle(
-                                                  12,
-                                                  appTheme.whiteA700,
-                                                  FontWeight.normal)),
+                                                  FontWeight.w600)),
+                                          const SizedBox(width: 10),
+                                          Icon(
+                                            Icons.flag_rounded,
+                                            size: 20,
+                                            color: tasks.priority == 'high'
+                                                ? appTheme.red500
+                                                : tasks.priority == 'medium'
+                                                    ? appTheme.yellowA900
+                                                    : tasks.priority == 'low'
+                                                        ? appTheme.teal300
+                                                        : appTheme.indigoA100,
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              ReusableText(
+                                                  text: tasks.description,
+                                                  style: appStyle(
+                                                      15,
+                                                      appTheme.whiteA700,
+                                                      FontWeight.normal)),
+                                              const SizedBox(width: 15),
+                                              Icon(Icons.calendar_month_rounded,
+                                                  color: tasks.priority ==
+                                                          'high'
+                                                      ? appTheme.red500
+                                                      : tasks.priority ==
+                                                              'medium'
+                                                          ? appTheme.yellowA900
+                                                          : tasks.priority ==
+                                                                  'low'
+                                                              ? appTheme.teal300
+                                                              : appTheme
+                                                                  .indigoA100,
+                                                  size: 20),
+                                              Text(tasks.duedate,
+                                                  style: appStyle(
+                                                      12,
+                                                      appTheme.whiteA700,
+                                                      FontWeight.normal)),
+                                            ],
+                                          ),
                                         ],
                                       ),
                                     ],
                                   ),
+                                  Column(
+                                    children: [
+                                      Checkbox(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        side: BorderSide(
+                                            width: 2,
+                                            color: tasks.priority == 'high'
+                                                ? appTheme.red500
+                                                : tasks.priority == 'medium'
+                                                    ? appTheme.yellowA900
+                                                    : tasks.priority == 'low'
+                                                        ? appTheme.teal300
+                                                        : appTheme.indigoA100),
+                                        value: tasks.isCompleted,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            tasks.isCompleted = !isDone;
+                                          });
+                                          DatabaseService().updateTaskStatus(
+                                              tasks.id, tasks.isCompleted);
+                                        },
+                                      ),
+                                    ],
+                                  )
                                 ],
                               ),
-                              Column(
-                                children: [
-                                  Checkbox(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    side: BorderSide(
-                                      width: 2,
-                                        color: tasks.priority == 'high'
-                                            ? appTheme.red500
-                                            : tasks.priority == 'medium'
-                                                ? appTheme.yellowA900
-                                                : tasks.priority == 'low'
-                                                    ? appTheme.teal300
-                                                    : appTheme.indigoA100),
-                                    value: tasks.isCompleted,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        tasks.isCompleted = !isDone;
-                                      });
-                                      DatabaseService().updateTaskStatus(
-                                          tasks.id, tasks.isCompleted);
-                                    },
-                                  ),
-                                ],
-                              )
-                            ],
+                            ),
                           ),
-                        ),
-                      );
-                    });
-              } else {
-                return const Center(child: CircularProgressIndicator());
-              }
-            }),
+                        );
+                      });
+                } else {
+                  return const Center(child: CircularProgressIndicator());
+                }
+              }),
+        ),
       ),
     );
   }
 
+//show task dialog
   void _showTaskDialog(BuildContext context, {Task? task}) {
     final TextEditingController title =
         TextEditingController(text: task?.title);
@@ -318,25 +367,26 @@ class _TomorrowTaskState extends State<TomorrowTask> {
               onPressed: () async {
                 if (task == null) {
                   if (title.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Title cannot be empty')),
-                  );
-                  return;
-                }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Title cannot be empty')),
+                    );
+                    return;
+                  }
                   await DatabaseService().addTodoTask(title.text,
                       descriptionController.text, 'default', selectedDate);
                 } else {
                   if (title.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Title cannot be empty')),
-                  );
-                  return;
-                }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Title cannot be empty')),
+                    );
+                    return;
+                  }
                   await DatabaseService().updateTask(
                     task.id,
                     title.text,
                     descriptionController.text,
                     task.priority,
+                    selectedDate,
                   );
                 }
                 Navigator.pop(context);
@@ -397,130 +447,6 @@ class _TomorrowTaskState extends State<TomorrowTask> {
               ),
             ),
           ],
-        );
-      },
-    );
-  }
-
-  void _showPriorityDialog(BuildContext context, Task task) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: appTheme.blackA700,
-          title: Text('Select priority',
-              style: TextStyle(
-                fontSize: 22,
-                color: appTheme.whiteA700,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment:
-                MainAxisAlignment.center, // Fit content vertically
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        InkWell(
-                          onTap: () async {
-                            await _databaseService.updateTaskPriority(
-                                task.id, 'high');
-                            Navigator.of(context).pop();
-                          },
-                          child: CircleAvatar(
-                            radius: 25,
-                            backgroundColor: appTheme.red500,
-                            child: Icon(Icons.flag_rounded,
-                                color: appTheme.whiteA700),
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text("High",
-                            style: TextStyle(color: appTheme.whiteA700)),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        InkWell(
-                          onTap: () async {
-                            await _databaseService.updateTaskPriority(
-                                task.id, 'medium');
-                            Navigator.of(context).pop();
-                          },
-                          child: CircleAvatar(
-                            radius: 25,
-                            backgroundColor: appTheme.yellowA900,
-                            child: Icon(Icons.flag_rounded,
-                                color: appTheme.whiteA700),
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text("Medium",
-                            style: TextStyle(color: appTheme.whiteA700)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10), // Add spacing between rows
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        InkWell(
-                          onTap: () async {
-                            await _databaseService.updateTaskPriority(
-                                task.id, 'low');
-                            Navigator.of(context).pop();
-                          },
-                          child: CircleAvatar(
-                            radius: 25,
-                            backgroundColor: appTheme.teal300,
-                            child: Icon(Icons.flag_rounded,
-                                color: appTheme.whiteA700),
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text("Low",
-                            style: TextStyle(color: appTheme.whiteA700)),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        InkWell(
-                          onTap: () async {
-                            await _databaseService.updateTaskPriority(
-                                task.id, 'default');
-                            Navigator.of(context).pop();
-                          },
-                          child: CircleAvatar(
-                            radius: 25,
-                            backgroundColor: appTheme.indigoA100,
-                            child: Icon(Icons.flag_rounded,
-                                color: appTheme.whiteA700),
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text("Default",
-                            style: TextStyle(color: appTheme.whiteA700)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
         );
       },
     );

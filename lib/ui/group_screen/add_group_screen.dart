@@ -53,7 +53,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
             onPressed: () {
               if (image != null) {
                 final imageFile = Image.file(image!);
-                _databaseService.addGroup(
+                _databaseService.createGroup(
                     name.text, description.text, imageFile);
               } else {}
               Navigator.pop(context);

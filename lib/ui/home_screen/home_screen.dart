@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:reminder_app/services/database_service.dart';
 import 'package:reminder_app/ui/chart_screen/chart_screen.dart';
 import 'package:reminder_app/ui/group_screen/group_screen.dart';
 import 'package:reminder_app/ui/task_screen/add_task_screen.dart';
@@ -12,6 +14,7 @@ import 'package:reminder_app/widgets/custom_elevated_button.dart';
 import 'package:reminder_app/widgets/custom_search_view.dart';
 import 'package:reminder_app/widgets/reusable_text.dart';
 import '../../app/app_export.dart';
+import '../../models/category_model.dart';
 import '../../services/auth_service.dart';
 import '../profile_setting_screen/profile_setting.dart';
 
@@ -27,6 +30,18 @@ bool show = true;
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController search = TextEditingController();
   final AuthService _authService = AuthService();
+  final DatabaseService _databaseService = DatabaseService();
+  String currentUsername = "User";
+
+  @override
+  void initState() {
+    super.initState();
+    _authService.user.listen((user) {
+      setState(() {
+        currentUsername = user?.displayName ?? "User";
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +79,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           builder: (context, snapshot) {
                             if (snapshot.hasData) {
                               return ReusableText(
-                                text: snapshot.data?.displayName ?? 'User',
+                                text: currentUsername,
                                 style: appStyle(
                                     16, appTheme.whiteA700, FontWeight.bold),
                               );
@@ -148,6 +163,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             //warning task
             SizedBox(height: 35.h),
             //group task
+            //category
+            _buildCategory(),
+            SizedBox(height: 35.h),
+            _categoryView(),
           ],
         ),
       ),
@@ -306,6 +325,136 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         //   ),
         // ),
       ],
+    );
+  }
+
+  _buildCategory() {
+    return SizedBox(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(
+            Icons.bookmark_rounded,
+            color: appTheme.blueGray100,
+          ),
+          ReusableText(
+            text: "Category",
+            style: appStyle(16, appTheme.blueGray100, FontWeight.bold),
+          ),
+          SizedBox(
+            width: 25,
+            height: 25,
+            child: IconButton(
+              onPressed: () {
+                showCategoryDialog(context);
+              },
+              icon: Icon(
+                Icons.add,
+                color: appTheme.indigo20001,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void showCategoryDialog(BuildContext context, {Category? category}) {
+    final TextEditingController name =
+        TextEditingController(text: category?.name);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: appTheme.blackA700,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: name,
+                decoration: const InputDecoration(hintText: 'Category Name'),
+                style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Close', style: TextStyle(fontSize: 16)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: appTheme.indigoA100,
+                foregroundColor: appTheme.whiteA700,
+              ),
+              onPressed: () async {
+                if (category == null) {
+                  await DatabaseService().addCategory(
+                    name.text,
+                  );
+                } else {
+                  await DatabaseService().updateCategory(
+                    category.id,
+                    name.text,
+                  );
+                }
+                Navigator.pop(context);
+              },
+              child: Text(
+                category == null ? 'Add' : 'Save',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  _categoryView() {
+    return NotificationListener<UserScrollNotification>(
+      onNotification: (notification) {
+        if (notification.direction == ScrollDirection.reverse) {
+          setState(() {
+            show = false;
+          });
+        } else if (notification.direction == ScrollDirection.forward) {
+          setState(() {
+            show = true;
+          });
+        }
+        return true;
+      },
+      child: StreamBuilder(
+          stream: _databaseService.categories,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              List<Category> categories = snapshot.data!;
+              return Container(
+                height: 200,
+                child: ListView.builder(
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: Text(categories[index].name),
+                      trailing: IconButton(
+                        icon: Icon(Icons.edit),
+                        onPressed: () {
+                          showCategoryDialog(context,
+                              category: categories[index]);
+                        },
+                      ),
+                    );
+                  },
+                ),
+              );
+            } else {
+              return const CircularProgressIndicator();
+            }
+          }),
     );
   }
 }

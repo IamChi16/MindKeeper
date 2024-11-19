@@ -55,7 +55,7 @@ class _ProfileSettingState extends State<ProfileSetting> {
   _buildProfileSetting() {
     return InkWell(
       onTap: () {
-        Navigator.pushNamed(context, AppRoutes.accountDetails);
+        setState(() {Navigator.pushNamed(context, AppRoutes.accountDetails);});
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),

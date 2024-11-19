@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:reminder_app/models/tasks_model.dart';
 
 class SharedTasks extends Task {
@@ -14,6 +15,7 @@ class SharedTasks extends Task {
     required bool isCompleted,
     required String time,
     required String duedate,
+    File? file,
   }) : super(
           id: id,
           title: title,
@@ -22,5 +24,6 @@ class SharedTasks extends Task {
           isCompleted: isCompleted,
           time: time,
           duedate: duedate,
+          file: file
         );
 }

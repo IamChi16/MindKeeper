@@ -1,3 +1,5 @@
+import 'dart:io';
+
 class Task {
   String id;
   String title;
@@ -6,6 +8,7 @@ class Task {
   String time;
   String duedate;
   bool isCompleted;
+  File? file;
 
   Task(
       {required this.id,
@@ -14,6 +17,7 @@ class Task {
       required this.priority,
       required this.time,
       required this.duedate,
-      required this.isCompleted});
+      required this.isCompleted,
+      this.file});
 
 }

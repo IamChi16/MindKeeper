@@ -1,14 +1,10 @@
-import 'dart:math';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:reminder_app/models/tasks_model.dart';
 import 'package:reminder_app/widgets/appstyle.dart';
 import 'package:intl/intl.dart';
-import 'package:reminder_app/widgets/reusable_text.dart';
 import '../../app/app_export.dart';
 import '../../services/database_service.dart';
-import '../../widgets/custom_elevated_button.dart';
 import '../../widgets/priority_widget.dart';
 
 class AddTaskScreen extends StatefulWidget {
@@ -21,13 +17,14 @@ class AddTaskScreen extends StatefulWidget {
 class AddTaskState extends State<AddTaskScreen> {
   final DatabaseService _databaseService = DatabaseService();
   User? user = FirebaseAuth.instance.currentUser;
+  Task? task;
   late String uid;
-  final title = TextEditingController();
-  final description = TextEditingController();
+  late TextEditingController title;
+  late TextEditingController description;
+  late TextEditingController subtaskTitle;
   DateTime selectedDate = DateTime.now();
   DateTime? pickedDate;
   String selectedPriority = 'default';
-  Task? task;
 
   bool inSync = false;
   FocusNode titleFocusNode = FocusNode();
@@ -37,6 +34,19 @@ class AddTaskState extends State<AddTaskScreen> {
   void initState() {
     super.initState();
     uid = FirebaseAuth.instance.currentUser!.uid;
+    title = TextEditingController(text: task?.title);
+    description = TextEditingController(text: task?.description);
+    subtaskTitle = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    title.dispose();
+    description.dispose();
+    subtaskTitle.dispose();
+    titleFocusNode.dispose();
+    descriptionFocusNode.dispose();
+    super.dispose();
   }
 
   void _showPriorityDialog(BuildContext context, Task? task) {
@@ -56,160 +66,104 @@ class AddTaskState extends State<AddTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-            iconSize: 20,
-            onPressed: !inSync
-                ? () {
-                    Navigator.pop(context);
-                  }
-                : null,
-            icon: Icon(
-              Icons.close_rounded,
-              color: appTheme.whiteA700,
-            )),
-        title: Text(
-          "Add Task",
-          style: appStyle(20, appTheme.whiteA700, FontWeight.bold),
-        ),
-        centerTitle: true,
-        actions: [
-          CustomElevatedButton(
-            text: "Save",
-            onPressed: () async {
-              if (task == null) {
-                if (title.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Title cannot be empty')),
-                  );
-                  return;
-                }
-                await DatabaseService().addTodoTask(
-                    title.text, title.text, selectedPriority, selectedDate);
-              } else {
-                await DatabaseService().updateTask(
-                  task!.id,
-                  title.text,
-                  title.text,
-                  task!.priority,
-                );
-              }
-              Navigator.pop(context);
-            },
-            width: 100,
-            textStyle: theme.textTheme.bodyLarge,
-            buttonStyle: CustomButton.none,
-          )
-        ],
-      ),
-      body: Column(
+    return AlertDialog(
+      backgroundColor: appTheme.blackA700,
+      title: Text('Add Task',
+          style: appStyle(22, appTheme.whiteA700, FontWeight.w600),
+          textAlign: TextAlign.center),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-              width: double.maxFinite,
-              padding: const EdgeInsets.only(left: 24, right: 24, top: 24),
-              child: Column(
-                children: [
-                  SizedBox(height: 20.h),
-                  _buildTitle(title, titleFocusNode),
-                  SizedBox(height: 30.h),
-                  _buildDescription(description, descriptionFocusNode),
-                  SizedBox(height: 30.h),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.calendar_today,
-                            color: pickedDate == null
-                                ? appTheme.gray50001
-                                : appTheme.red500),
-                        onPressed: () async {
-                            pickedDate = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          setState(() {
-                            if (pickedDate != null) {
-                              selectedDate = pickedDate!;
-                            }
-                          });
-                        },
-                      ),
-                      ReusableText(
-                        text: DateFormat('EEE, d MMMM').format(selectedDate),
-                        style: appStyle(16, appTheme.gray50001, FontWeight.normal),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          _showPriorityDialog(context, task);
-                        },
-                        icon: Icon(Icons.flag_rounded,
-                            color:  selectedPriority == 'high'
-                                              ? appTheme.red500
-                                              : selectedPriority == 'medium'
-                                                  ? appTheme.yellowA900
-                                                  : selectedPriority == 'low'
-                                                      ? appTheme.teal300
-                                                      : appTheme.indigoA100),
-                      ),
-                    ],
-                  ),
-                  _buildSubTask(),
-                  SizedBox(height: 30.h), 
-                ],
-              )),
+          TextField(
+            controller: title,
+            decoration: const InputDecoration(hintText: 'Title'),
+            style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: description,
+            decoration: const InputDecoration(hintText: 'Description'),
+            style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
+            maxLines: 6,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.calendar_today, color: Colors.white),
+                onPressed: () async {
+                  final pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2100),
+                  );
+                  if (pickedDate != null) {
+                    selectedDate = pickedDate;
+                  }
+                },
+              ),
+              IconButton(
+                onPressed: () {
+                  _showPriorityDialog(context, task);
+                },
+                icon: Icon(Icons.flag_rounded,
+                    color: selectedPriority == 'high'
+                        ? appTheme.red500
+                        : selectedPriority == 'medium'
+                            ? appTheme.yellowA900
+                            : selectedPriority == 'low'
+                                ? appTheme.teal300
+                                : appTheme.gray50001),
+              ),
+              IconButton(
+                onPressed: () {},
+                icon: Icon(
+                  Icons.bookmark_outlined,
+                  color: appTheme.gray50001,
+                ),
+              ),
+              IconButton(
+                onPressed: () {},
+                icon: Icon(
+                  Icons.file_present_rounded,
+                  color: appTheme.gray50001,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTitle(TextEditingController title, FocusNode titleFocusNode) {
-    return Container(
-      color: appTheme.blackA700,
-      padding: const EdgeInsets.all(10),
-      child: TextField(
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          hintText: "Title",
-          contentPadding: EdgeInsets.fromLTRB(20.h, 20.h, 12.h, 20.h),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel', style: TextStyle(fontSize: 16)),
         ),
-        controller: title,
-        focusNode: titleFocusNode,
-        autofocus: true,
-      ),
-    );
-  }
-
-  Widget _buildDescription(
-      TextEditingController description, FocusNode descriptionFocusNode) {
-    return Container(
-      color: appTheme.blackA700,
-      padding: const EdgeInsets.all(10),
-      child: TextField(
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          hintText: "Description",
-          contentPadding: EdgeInsets.fromLTRB(20.h, 20.h, 12.h, 20.h),
-        ),
-        controller: description,
-        focusNode: descriptionFocusNode,
-        maxLines: 6,
-      ),
-    );
-  }
-
-  _buildSubTask() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.file_present_rounded),
-        ),
-        ReusableText(
-          text: "Attach Files",
-          style: appStyle(16, appTheme.gray50001, FontWeight.normal),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: appTheme.indigoA100,
+            foregroundColor: appTheme.whiteA700,
+          ),
+          onPressed: () async {
+            if (task == null) {
+              if (title.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Title cannot be empty')),
+                );
+                return;
+              }
+              await DatabaseService().addTodoTask(
+                  title.text, description.text, selectedPriority, selectedDate);
+            }
+            Navigator.pop(context);
+          },
+          child: const Text(
+            'Add',
+            style: TextStyle(fontSize: 16),
+          ),
         ),
       ],
     );

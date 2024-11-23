@@ -11,9 +11,9 @@ class PriorityDialog extends StatelessWidget {
   final Function(String priority) onPrioritySelected;
 
   const PriorityDialog({
-    Key? key,
+    super.key,
     required this.onPrioritySelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

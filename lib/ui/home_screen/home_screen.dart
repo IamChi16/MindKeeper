@@ -1,6 +1,13 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:reminder_app/services/database_service.dart';
 import 'package:reminder_app/ui/chart_screen/chart_screen.dart';
 import 'package:reminder_app/ui/group_screen/group_screen.dart';
@@ -13,6 +20,7 @@ import 'package:reminder_app/widgets/appstyle.dart';
 import 'package:reminder_app/widgets/custom_elevated_button.dart';
 import 'package:reminder_app/widgets/custom_search_view.dart';
 import 'package:reminder_app/widgets/reusable_text.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../app/app_export.dart';
 import '../../models/category_model.dart';
 import '../../services/auth_service.dart';
@@ -31,16 +39,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController search = TextEditingController();
   final AuthService _authService = AuthService();
   final DatabaseService _databaseService = DatabaseService();
-  String currentUsername = "User";
+
+  String? _photoBase64;
+  late String uid;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _authService.user.listen((user) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    _authService.user.listen((user) {
+    uid = FirebaseAuth.instance.currentUser!.uid;
+    _loadUserProfile();
+  }
+
+  _loadUserProfile() async {
+    var user =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    String? photoId = user.data()?['photoId'];
+
+    if (photoId != null) {
+      var imageDoc = await FirebaseFirestore.instance
+          .collection('images')
+          .doc(photoId)
+          .get();
       setState(() {
-        currentUsername = user?.displayName ?? "User";
+        _photoBase64 = imageDoc.data()?['image'];
       });
-    });
+    }
   }
 
   @override
@@ -66,12 +99,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             Navigator.of(context).push(MaterialPageRoute(
                                 builder: (context) => const ProfileSetting()));
                           },
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundColor: appTheme.whiteA700,
-                            child: Icon(Icons.camera_alt,
-                                color: appTheme.gray50001),
-                          ),
+                          child: _photoBase64 != null
+                              ? CircleAvatar(
+                                  radius: 22.5,
+                                  backgroundImage: MemoryImage(
+                                    base64Decode(_photoBase64!),
+                                  ),
+                                )
+                              : const Icon(Icons.account_circle_rounded,
+                                  size: 45, color: Colors.grey),
                         ),
                         const SizedBox(width: 10),
                         StreamBuilder(
@@ -79,7 +115,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           builder: (context, snapshot) {
                             if (snapshot.hasData) {
                               return ReusableText(
-                                text: currentUsername,
+                                text: snapshot.data?.displayName ?? 'User',
                                 style: appStyle(
                                     16, appTheme.whiteA700, FontWeight.bold),
                               );
@@ -161,11 +197,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SizedBox(height: 35.h),
             _buildCalendarView(),
             //warning task
-            SizedBox(height: 35.h),
+            SizedBox(height: 70.h),
             //group task
             //category
             _buildCategory(),
-            SizedBox(height: 35.h),
+            SizedBox(height: 20.h),
             _categoryView(),
           ],
         ),
@@ -329,14 +365,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   _buildCategory() {
-    return SizedBox(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(
-            Icons.bookmark_rounded,
-            color: appTheme.blueGray100,
-          ),
           ReusableText(
             text: "Category",
             style: appStyle(16, appTheme.blueGray100, FontWeight.bold),
@@ -376,6 +409,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 decoration: const InputDecoration(hintText: 'Category Name'),
                 style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
               ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () async {
+                  Color? pickedColor;
+                  pickedColor = await showDialog(
+                    context: context,
+                    builder: (context) {
+                      Color tempColor = Colors.white;
+                      return AlertDialog(
+                        title: const Text('Pick a color'),
+                        content: SingleChildScrollView(
+                          child: BlockPicker(
+                            pickerColor: tempColor,
+                            onColorChanged: (color) {
+                              pickedColor = tempColor;
+                            },
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            child: const Text('Select'),
+                            onPressed: () {
+                              Navigator.of(context).pop(pickedColor);
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                  if (pickedColor != null) {
+                    setState(() {
+                      category?.color = pickedColor!;
+                    });
+                  }
+                },
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: category?.color ??
+                        Colors.white, // Replace with the picked color
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
             ],
           ),
           actions: [
@@ -394,11 +472,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 if (category == null) {
                   await DatabaseService().addCategory(
                     name.text,
+                    category?.color ?? Colors.white,
                   );
                 } else {
                   await DatabaseService().updateCategory(
                     category.id,
                     name.text,
+                    category.color,
                   );
                 }
                 Navigator.pop(context);
@@ -433,19 +513,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               List<Category> categories = snapshot.data!;
-              return Container(
-                height: 200,
+              return Expanded(
                 child: ListView.builder(
                   itemCount: categories.length,
                   itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(categories[index].name),
-                      trailing: IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () {
-                          showCategoryDialog(context,
-                              category: categories[index]);
-                        },
+                    return Slidable(
+                      endActionPane: ActionPane(
+                        extentRatio: 0.35,
+                        motion: const ScrollMotion(),
+                        children: [
+                          SlidableAction(
+                              onPressed: (context) {
+                                showCategoryDialog(context,
+                                    category: categories[index]);
+                              },
+                              icon: Icons.edit,
+                              foregroundColor: appTheme.indigo20001,
+                              backgroundColor: Colors.transparent),
+                          SlidableAction(
+                            onPressed: (context) {
+                              _databaseService
+                                  .deleteCategory(categories[index].id);
+                            },
+                            icon: Icons.delete,
+                            foregroundColor: appTheme.red500,
+                            backgroundColor: Colors.transparent,
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.bookmark_rounded,
+                          color: categories[index].color,
+                        ),
+                        title: Text(categories[index].name,
+                            style: appStyle(
+                                16, appTheme.whiteA700, FontWeight.normal)),
                       ),
                     );
                   },

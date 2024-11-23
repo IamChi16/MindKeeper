@@ -1,8 +1,9 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:reminder_app/models/tasks_model.dart';
 import 'package:reminder_app/widgets/appstyle.dart';
-import 'package:intl/intl.dart';
 import '../../app/app_export.dart';
 import '../../services/database_service.dart';
 import '../../widgets/priority_widget.dart';
@@ -155,7 +156,7 @@ class AddTaskState extends State<AddTaskScreen> {
                 );
                 return;
               }
-              await DatabaseService().addTodoTask(
+              await _databaseService.addTodoTask(
                   title.text, description.text, selectedPriority, selectedDate);
             }
             Navigator.pop(context);

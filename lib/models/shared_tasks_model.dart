@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:reminder_app/models/tasks_model.dart';
 
 class SharedTasks extends Task {
@@ -8,22 +7,13 @@ class SharedTasks extends Task {
   SharedTasks({
     required this.assignedTo,
     required this.order,
-    required String id,
-    required String title,
-    required String description,
-    required String priority,
-    required bool isCompleted,
-    required String time,
-    required String duedate,
-    File? file,
-  }) : super(
-          id: id,
-          title: title,
-          description: description,
-          priority: priority,
-          isCompleted: isCompleted,
-          time: time,
-          duedate: duedate,
-          file: file
-        );
+    required super.id,
+    required super.title,
+    required super.description,
+    required super.priority,
+    required super.isCompleted,
+    required super.time,
+    required super.duedate,
+    super.file,
+  });
 }

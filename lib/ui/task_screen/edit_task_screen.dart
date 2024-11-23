@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:reminder_app/models/tasks_model.dart';
 import 'package:reminder_app/widgets/appstyle.dart';
@@ -11,14 +12,14 @@ import '../../widgets/custom_elevated_button.dart';
 import '../../widgets/priority_widget.dart';
 
 class EditTask extends StatefulWidget {
-  Task task;
-  EditTask({required this.task, super.key});
+  final Task task;
+  const EditTask({required this.task, super.key});
 
   @override
-  State<EditTask> createState() => _Edit_TaskState();
+  State<EditTask> createState() => _EditTaskState();
 }
 
-class _Edit_TaskState extends State<EditTask> {
+class _EditTaskState extends State<EditTask> {
   final DatabaseService _databaseService = DatabaseService();
   User? user = FirebaseAuth.instance.currentUser;
   late String uid;
@@ -28,6 +29,7 @@ class _Edit_TaskState extends State<EditTask> {
   DateTime selectedDate = DateTime.now();
   DateTime? pickedDate;
   String selectedPriority = 'default';
+  bool isDone = false;
 
   bool inSync = false;
   FocusNode titleFocusNode = FocusNode();
@@ -94,7 +96,7 @@ class _Edit_TaskState extends State<EditTask> {
             onPressed: () async {
               if (title.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Title cannot be empty')),
+                  const SnackBar(content: Text('Title cannot be empty')),
                 );
                 return;
               }
@@ -126,6 +128,7 @@ class _Edit_TaskState extends State<EditTask> {
                   SizedBox(height: 30.h),
                   _buildDescription(description, descriptionFocusNode),
                   SizedBox(height: 30.h),
+                  _buildSubTaskList(),
                   _buildSubTask(),
                   SizedBox(height: 30.h),
                   Row(
@@ -167,9 +170,7 @@ class _Edit_TaskState extends State<EditTask> {
                                         ? appTheme.teal300
                                         : appTheme.gray50001),
                       ),
-                    ],
-                  ),
-                  Row(
+                      Row(
                     children: [
                       IconButton(
                         onPressed: () {},
@@ -180,6 +181,9 @@ class _Edit_TaskState extends State<EditTask> {
                       ),
                     ],
                   ),
+                    ],
+                  ),
+                  
                   _buildAttachFile(),
                   SizedBox(height: 30.h),
                 ],
@@ -237,10 +241,10 @@ class _Edit_TaskState extends State<EditTask> {
         ),
         controller: subtaskTitle,
         maxLines: 1,
-        onChanged: (value) {
+        onSubmitted: (value) {
           _databaseService.addSubTask(taskId, subtaskTitle.text);
           setState(() {
-            _buildSubTaskList();
+            subtaskTitle.clear();
           });
         },
       ),
@@ -254,19 +258,60 @@ class _Edit_TaskState extends State<EditTask> {
         if (snapshot.hasData) {
           List<SubTask> subTasks = snapshot.data!;
           return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: subTasks.length,
             itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(subTasks[index].title),
-                leading: Checkbox(
-                  value: subTasks[index].isCompleted,
-                  onChanged: (value) {
-                    _databaseService.updateSubTask(
-                      widget.task.id,
-                      subTasks[index].id,
-                      subTasks[index].title,
-                    );
-                  },
+              SubTask subTask = subTasks[index];
+              return Container(
+                color: appTheme.blackA700,
+                child: Slidable(
+                    key: ValueKey(subTask.id),
+                    endActionPane: ActionPane(
+                      motion: const DrawerMotion(),
+                      extentRatio: 0.2, // 20% of screen width
+                      children: [
+                      SlidableAction(
+                        backgroundColor: appTheme.red500,
+                        icon: Icons.delete_rounded,
+                        onPressed: (context) {
+                        _databaseService.deleteSubTask(
+                          widget.task.id, subTask.id);
+                        },
+                      ),
+                      ],
+                    ),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: TextField(
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        hintText: "Sub Task",
+                        border: InputBorder.none,
+                      ),
+                      controller: TextEditingController(text: subTask.title),
+                      onChanged: (value) async {
+                        setState(() {
+                          subTask.title = value;
+                        });
+                        await _databaseService.updateSubTask(
+                            widget.task.id, subTask.id, value);
+                      },
+                    ),
+                    leading: Checkbox(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      value: subTask.isCompleted,
+                      onChanged: (value) {
+                        setState(() {
+                          subTask.isCompleted = !isDone;
+                        });
+                        _databaseService.updateSubTaskStatus(
+                            widget.task.id, subTask.id, subTask.isCompleted);
+                      },
+                    ),
+                  ),
                 ),
               );
             },

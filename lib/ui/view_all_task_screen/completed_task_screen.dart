@@ -1,6 +1,7 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../app/app_export.dart';
 import '../../models/tasks_model.dart';
@@ -82,7 +83,7 @@ class _CompletedTaskState extends State<CompletedTask> {
                       return Slidable(
                         key: ValueKey(tasks.id),
                         endActionPane: ActionPane(
-                          motion: DrawerMotion(),
+                          motion: const DrawerMotion(),
                           children: [
                             SlidableAction(
                               backgroundColor: Colors.transparent,
@@ -173,7 +174,7 @@ class _CompletedTaskState extends State<CompletedTask> {
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     checkColor: appTheme.blackA700,
-                                    fillColor: MaterialStateProperty.all<Color>(
+                                    fillColor: WidgetStateProperty.all<Color>(
                                         tasks.priority == 'high'
                                             ? appTheme.red500
                                             : tasks.priority == 'medium'

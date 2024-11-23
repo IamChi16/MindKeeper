@@ -12,15 +12,13 @@ class ReusableText extends StatelessWidget {
   
 @override
   Widget build(BuildContext context){
-    return Container(
-      child: Text(
-        text,
-        style: style,
-        maxLines: 1,
-        textAlign: textAlign,
-        softWrap: false,
-        overflow: TextOverflow.fade,
-      ),
+    return Text(
+      text,
+      style: style,
+      maxLines: 1,
+      textAlign: textAlign,
+      softWrap: false,
+      overflow: TextOverflow.fade,
     );
   }
 

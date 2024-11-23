@@ -135,7 +135,7 @@ class _TomorrowTaskState extends State<TomorrowTask> {
                         return Slidable(
                           key: ValueKey(tasks.id),
                           endActionPane: ActionPane(
-                            motion: DrawerMotion(),
+                            motion:const DrawerMotion(),
                             children: [
                               SlidableAction(
                                 backgroundColor: Colors.transparent,
@@ -163,7 +163,7 @@ class _TomorrowTaskState extends State<TomorrowTask> {
                             ],
                           ),
                           startActionPane: ActionPane(
-                            motion: DrawerMotion(),
+                            motion:const DrawerMotion(),
                             children: [
                               SlidableAction(
                                 backgroundColor: Colors.transparent,
@@ -389,6 +389,7 @@ class _TomorrowTaskState extends State<TomorrowTask> {
                     selectedDate,
                   );
                 }
+                // ignore: use_build_context_synchronously
                 Navigator.pop(context);
               },
               child: Text(
@@ -439,6 +440,7 @@ class _TomorrowTaskState extends State<TomorrowTask> {
               ),
               onPressed: () async {
                 await _databaseService.deleteTask(task.id);
+                // ignore: use_build_context_synchronously
                 Navigator.of(context).pop();
               },
               child: const Text(

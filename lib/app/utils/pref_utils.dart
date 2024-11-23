@@ -11,7 +11,7 @@ class PrefUtils {
 
   Future<void> init() async {
     _sharedPreferences = await SharedPreferences.getInstance();
-    print('Shared Preferences Initialized');
+    // print('Shared Preferences Initialized');
   }
   //clear all data stored in preference
   void clearPreference() {

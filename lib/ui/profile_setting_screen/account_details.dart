@@ -1,6 +1,14 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:reminder_app/services/auth_service.dart';
+import 'package:reminder_app/services/image_service.dart';
 import '../../app/app_export.dart';
 import '../../widgets/appstyle.dart';
 import '../../widgets/custom_container.dart';
@@ -16,6 +24,12 @@ class AccountDetails extends StatefulWidget {
 
 class _AccountSettingScreenState extends State<AccountDetails> {
   final AuthService _authService = AuthService();
+  final ImageService _imageService = ImageService();
+  final ImagePicker _picker = ImagePicker();
+
+  File? _imageFile;
+  String? _photoBase64;
+  bool _isLoading = false;
   final name = TextEditingController();
   String currentUsername = "";
 
@@ -24,11 +38,62 @@ class _AccountSettingScreenState extends State<AccountDetails> {
   @override
   void initState() {
     super.initState();
+    uid = FirebaseAuth.instance.currentUser!.uid;
+    _loadUserProfile();
     _authService.user.listen((user) {
       setState(() {
         currentUsername = user?.displayName ?? "";
       });
     });
+  }
+
+  Future<void> _loadUserProfile() async {
+    var user =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    String? photoId = user.data()?['photoId'];
+
+    if (photoId != null) {
+      var imageDoc = await FirebaseFirestore.instance
+          .collection('images')
+          .doc(photoId)
+          .get();
+      setState(() {
+        _photoBase64 = imageDoc.data()?['image'];
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+      _uploadAndSaveImage();
+    }
+  }
+
+  Future<void> _uploadAndSaveImage() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      String imageId = await _imageService.uploadImage(_imageFile!);
+      await _authService.saveImageUrl(uid, imageId);
+      var imageDoc = await FirebaseFirestore.instance
+          .collection('images')
+          .doc(imageId)
+          .get();
+      setState(() {
+        _photoBase64 = imageDoc.data()?['image'];
+      });
+    } catch (e) {
+      print('Failed to upload and save image: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -83,7 +148,7 @@ class _AccountSettingScreenState extends State<AccountDetails> {
                   fontWeight: FontWeight.normal,
                 ),
                 onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.loginScreen);
+                  Navigator.pushNamed(context, AppRoutes.startScreen);
                 },
                 buttonStyle: CustomButton.normal,
               ),
@@ -96,36 +161,54 @@ class _AccountSettingScreenState extends State<AccountDetails> {
 
   _buildAvatarSetting() {
     return InkWell(
-      onTap: () {
-        Navigator.pushNamed(context, AppRoutes.accountDetails);
+      onTap: () async {
+        try {
+          await _pickImage();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Profile picture updated successfully!')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error uploading profile picture')),
+          );
+        }
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        constraints: const BoxConstraints(
-          minHeight: 50,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            ReusableText(
-              text: "Avatar",
-              style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
+      child: _isLoading
+          ? const CircularProgressIndicator()
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              constraints: const BoxConstraints(
+                minHeight: 50,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ReusableText(
+                    text: "Avatar",
+                    style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
+                  ),
+                  Row(
+                    children: [
+                      ClipOval(
+                        child: _photoBase64 != null
+                            ? Image.memory(
+                                base64Decode(_photoBase64!),
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.cover,
+                              )
+                            : const Icon(Icons.account_circle_rounded,
+                                size: 45, color: Colors.grey),
+                      ),
+                      const SizedBox(width: 15),
+                      Icon(Icons.arrow_forward_ios,
+                          color: appTheme.whiteA700, size: 16),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: appTheme.whiteA700,
-                  child: Icon(Icons.camera_alt, color: appTheme.gray50001),
-                ),
-                const SizedBox(width: 15),
-                Icon(Icons.arrow_forward_ios,
-                    color: appTheme.whiteA700, size: 16),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 

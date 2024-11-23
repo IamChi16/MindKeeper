@@ -46,7 +46,7 @@ class DatabaseService {
   //update task
   Future<void> updateTask(String id, String title, String description,
       String priority, DateTime? duedate) async {
-      final String formattedDueDate = DateFormat('EEE, d MMMM').format(duedate!);
+    final String formattedDueDate = DateFormat('EEE, d MMMM').format(duedate!);
     return await taskCollection.doc(id).update({
       'title': title,
       'description': description,
@@ -143,21 +143,22 @@ class DatabaseService {
 
   //get subtasks
   Stream<List<SubTask>> getSubTasks(String taskId) {
-      return taskCollection
-          .doc(taskId)
-          .collection('subtasks')
-          .snapshots()
-          .map(_subTaskListFromSnapshot);
-    }
+    return taskCollection
+        .doc(taskId)
+        .collection('subtasks')
+        .where('isCompleted', isEqualTo: false)
+        .snapshots()
+        .map(_subTaskListFromSnapshot);
+  }
 
   //update subtask
-  Future<void> updateSubTask(String taskId, String subTaskId, String subTask) {
+  Future<void> updateSubTask(String taskId, String subTaskId, String title) {
     return taskCollection
         .doc(taskId)
         .collection('subtasks')
         .doc(subTaskId)
         .update({
-      'subtask': subTask,
+      'title': title,
     });
   }
 
@@ -192,10 +193,11 @@ class DatabaseService {
   }
 
   //add category
-  Future<DocumentReference> addCategory(String name) async {
+  Future<DocumentReference> addCategory(String name, Color color) async {
     return await categoryCollection.add({
       'uid': user!.uid,
       'name': name,
+      'color': color,
     });
   }
 
@@ -212,17 +214,17 @@ class DatabaseService {
       return Category(
         id: doc.id,
         name: doc['name'] ?? '',
+        color: Color(doc['color']),
       );
     }).toList();
   }
 
   //update category
-  Future<void> updateCategory(String id, String name) async {
+  Future<void> updateCategory(String id, String name, Color color) async {
     final updateCategoryCollection =
         FirebaseFirestore.instance.collection('categories').doc(id);
-    return await updateCategoryCollection.update({
-      'name': name,
-    });
+    return await updateCategoryCollection
+        .update({'name': name, 'color': color});
   }
 
   //delete category
@@ -261,13 +263,14 @@ class DatabaseService {
   }
 
   //add Group
-  Future<DocumentReference> createGroup(
-      String name, String description, Image image) async {
+  Future<DocumentReference> createGroup(String name, String description,
+      {String? imageId}) async {
     return await groupCollection.add({
       'uid': user!.uid,
       'name': name,
       'description': description,
-      'image': image,
+      'photoId': imageId,
+      'createdAt': FieldValue.serverTimestamp()
     });
   }
 
@@ -305,9 +308,15 @@ class DatabaseService {
         id: doc.id,
         name: doc['name'] ?? '',
         description: doc['description'] ?? '',
-        image: doc['image'] ?? '',
       );
     }).toList();
+  }
+
+  //add photo group
+  Future<void> saveImageUrl(String groupId, String imageId) async {
+    await groupCollection.doc(groupId).update({
+      'photoId': imageId,
+    });
   }
 
   //add member
@@ -332,13 +341,15 @@ class DatabaseService {
   //update member role
   Future<void> updateMemberRole(
       String groupId, String memberId, String role) async {
-    return await groupCollection
-        .doc(groupId)
-        .collection('members')
-        .doc(memberId)
-        .update({
-      'role': role,
-    });
+    try {
+      await groupCollection
+          .doc(groupId)
+          .collection('members')
+          .doc(memberId)
+          .update({'role': role});
+    } catch (e) {
+      throw Exception('Failed to update member role: $e');
+    }
   }
 
 // Check if the user exists in your app's user database

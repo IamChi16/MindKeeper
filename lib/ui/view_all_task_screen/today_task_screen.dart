@@ -135,7 +135,7 @@ class _TodayTaskState extends State<TodayTask> {
                         return Slidable(
                           key: ValueKey(tasks.id),
                           endActionPane: ActionPane(
-                            motion: DrawerMotion(),
+                            motion: const DrawerMotion(),
                             children: [
                               SlidableAction(
                                 backgroundColor: Colors.transparent,
@@ -163,7 +163,7 @@ class _TodayTaskState extends State<TodayTask> {
                             ],
                           ),
                           startActionPane: ActionPane(
-                            motion: DrawerMotion(),
+                            motion:const DrawerMotion(),
                             children: [
                               SlidableAction(
                                 backgroundColor: Colors.transparent,
@@ -384,6 +384,7 @@ class _TodayTaskState extends State<TodayTask> {
                   await DatabaseService().updateTask(task.id, title.text,
                       descriptionController.text, task.priority, selectedDate);
                 }
+                // ignore: use_build_context_synchronously
                 Navigator.pop(context);
               },
               child: Text(
@@ -434,6 +435,7 @@ class _TodayTaskState extends State<TodayTask> {
               ),
               onPressed: () async {
                 await _databaseService.deleteTask(task.id);
+                // ignore: use_build_context_synchronously
                 Navigator.of(context).pop();
               },
               child: const Text(

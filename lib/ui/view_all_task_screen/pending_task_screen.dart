@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -136,7 +138,8 @@ class _PendingTaskState extends State<PendingTask> {
                         return Slidable(
                           key: ValueKey(tasks.id),
                           endActionPane: ActionPane(
-                            motion: DrawerMotion(),
+                            extentRatio: 0.45,
+                            motion: const DrawerMotion(),
                             children: [
                               SlidableAction(
                                 backgroundColor: Colors.transparent,
@@ -164,7 +167,8 @@ class _PendingTaskState extends State<PendingTask> {
                             ],
                           ),
                           startActionPane: ActionPane(
-                            motion: DrawerMotion(),
+                            extentRatio: 0.2,
+                            motion:const DrawerMotion(),
                             children: [
                               SlidableAction(
                                 backgroundColor: Colors.transparent,
@@ -185,7 +189,6 @@ class _PendingTaskState extends State<PendingTask> {
                                   task: tasks,
                                 );
                               }));
-
                             },
                             child: Container(
                               margin: const EdgeInsets.only(

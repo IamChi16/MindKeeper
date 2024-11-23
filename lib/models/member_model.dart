@@ -7,7 +7,6 @@ class Member extends Users {
     required super.uid,
     required super.email,
     required super.name,
-    super.photoUrl,
     this.role,
   });
   

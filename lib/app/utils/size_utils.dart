@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import 'package:flutter/widgets.dart';
 
 const num FIGMA_WIDTH = 375;
@@ -20,10 +22,10 @@ extension FormatExtension on double{
   }
 }
 
-enum DevicType { mobile, tablet, desktop }
+enum DeviceType { mobile, tablet, desktop }
 
 typedef ResponsiveBuild = Widget Function(
-  BuildContext context, Orientation orientation, DevicType deviceType);
+  BuildContext context, Orientation orientation, DeviceType deviceType);
 
 class Sizer extends StatelessWidget {
   const Sizer({super.key, required this.builder});
@@ -43,7 +45,7 @@ class Sizer extends StatelessWidget {
 class SizeUtils {
   static late BoxConstraints boxConstraints;
   static late Orientation orientation;
-  static late DevicType deviceType;
+  static late DeviceType deviceType;
   static late double width;
   static late double height;
 
@@ -60,7 +62,7 @@ class SizeUtils {
       width = boxConstraints.maxHeight.isNonZero(defaultValue: FIGMA_WIDTH);
       height = boxConstraints.maxWidth.isNonZero();
     }
-    deviceType = DevicType.mobile;
+    deviceType = DeviceType.mobile;
   }
 }
 

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:reminder_app/models/tasks_model.dart';
 import 'package:reminder_app/widgets/appstyle.dart';
 import '../../app/app_export.dart';
-import '../../services/database_service.dart';
+import '../../models/category_model.dart';
 import '../../widgets/priority_widget.dart';
 
 class AddTaskScreen extends StatefulWidget {
@@ -119,7 +119,9 @@ class AddTaskState extends State<AddTaskScreen> {
                                 : appTheme.gray50001),
               ),
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  _categoryView(context);
+                },
                 icon: Icon(
                   Icons.bookmark_outlined,
                   color: appTheme.gray50001,
@@ -167,6 +169,52 @@ class AddTaskState extends State<AddTaskScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _categoryView(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: appTheme.blackA700,
+          child: Container(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                StreamBuilder(
+                  stream: _databaseService.categories,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      List<Category> categories = snapshot.data!;
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          return InkWell(
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.bookmark_rounded,
+                                color: categories[index].color,
+                              ),
+                              title: Text(categories[index].name,
+                                  style: appStyle(
+                                      16, appTheme.whiteA700, FontWeight.normal)),
+                            ),
+                          );
+                        },
+                      );
+                    } else {
+                      return const CircularProgressIndicator();
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

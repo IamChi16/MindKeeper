@@ -7,7 +7,6 @@ import 'package:reminder_app/widgets/appstyle.dart';
 import 'package:reminder_app/widgets/reusable_text.dart';
 import '../../app/app_export.dart';
 import '../../models/subtask_model.dart';
-import '../../services/database_service.dart';
 import '../../widgets/custom_elevated_button.dart';
 import '../../widgets/priority_widget.dart';
 

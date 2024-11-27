@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:reminder_app/widgets/custom_container.dart';
 import '../../app/app_export.dart';
-import '../../services/auth_service.dart';
 import '../../widgets/appstyle.dart';
 import '../../widgets/reusable_text.dart';
 

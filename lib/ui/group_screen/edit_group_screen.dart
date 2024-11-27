@@ -1,30 +1,32 @@
-// ignore_for_file: use_build_context_synchronously, must_be_immutable
+// ignore_for_file: must_be_immutable, use_build_context_synchronously
+
 import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:reminder_app/app/app_export.dart';
-import 'package:reminder_app/widgets/custom_container.dart';
-import 'package:reminder_app/widgets/custom_elevated_button.dart';
-import 'package:reminder_app/widgets/reusable_text.dart';
-import '../../models/group_model.dart';
+import 'package:reminder_app/models/group_model.dart';
 
-class AddGroupScreen extends StatefulWidget {
-  Group? group;
-  AddGroupScreen({super.key, this.group});
+import '../../app/app_export.dart';
+import '../../widgets/custom_container.dart';
+import '../../widgets/custom_elevated_button.dart';
+import '../../widgets/reusable_text.dart';
+
+class EditGroupScreen extends StatefulWidget {
+  Group group;
+  EditGroupScreen({super.key,required this.group});
 
   @override
-  State<AddGroupScreen> createState() => _AddGroupScreenState();
+  State<EditGroupScreen> createState() => _EditGroupScreenState();
 }
 
-class _AddGroupScreenState extends State<AddGroupScreen> {
+class _EditGroupScreenState extends State<EditGroupScreen> {
   final DatabaseService _databaseService = DatabaseService();
   final ImageService _imageService = ImageService();
-  final name = TextEditingController();
-  final description = TextEditingController();
+  late TextEditingController name;
+  late TextEditingController description;
 
   final ImagePicker _picker = ImagePicker();
-
   File? _imageFile;
   String? _photoBase64;
 
@@ -36,33 +38,33 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
   void initState() {
     super.initState();
     _loadGroupPhoto();
+    name = TextEditingController(text: widget.group.name);
+    description = TextEditingController(text: widget.group.description);
   }
 
   Future<void> _loadGroupPhoto() async {
-    if (widget.group?.id != null) {
-      var group = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.group!.id)
+    var group = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(widget.group.id)
+        .get();
+
+    String? photoId = group.data()?['photoId'];
+
+    if (photoId != null) {
+      var imageDoc = await FirebaseFirestore.instance
+          .collection('images')
+          .doc(photoId)
           .get();
 
-      String? photoId = group.data()?['photoId'];
-
-      if (photoId != null) {
-        var imageDoc = await FirebaseFirestore.instance
-            .collection('images')
-            .doc(photoId)
-            .get();
-
-        final base64Image = imageDoc.data()?['image'];
-        if (base64Image != null) {
-          setState(() {
-            _photoBase64 = base64Image;
-            _imageFile = null;
-          });
-        }
+      final base64Image = imageDoc.data()?['image'];
+      if (base64Image != null) {
+        setState(() {
+          _photoBase64 = base64Image;
+          _imageFile = null;
+        });
       }
     }
-  }
+    }
 
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -78,7 +80,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
 
     try {
       String imageId = await _imageService.uploadImage(_imageFile!);
-      await _databaseService.saveImageUrl(widget.group!.id, imageId);
+      await _databaseService.saveImageUrl(widget.group.id, imageId);
       var imageDoc = await FirebaseFirestore.instance
           .collection('images')
           .doc(imageId)
@@ -91,6 +93,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
     }
   }
 
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,9 +109,9 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
             color: Colors.grey[500],
           ),
         ),
-        title: const Text(
-          "Add new group",
-          style: TextStyle(
+        title: Text(
+          "Group ${widget.group.name}",
+          style: const TextStyle(
               fontSize: 20, color: Colors.white, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
@@ -128,14 +131,15 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
                 if (_imageFile != null) {
                   imageId = await _imageService.uploadImage(_imageFile!);
                 }
-                await _databaseService.createGroup(
+                await _databaseService.updateGroup(
+                  widget.group.id,
                   name.text,
                   description.text,
-                  imageId: imageId,
+                  imageId,
                 );
 
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Group created successfully!')),
+                  const SnackBar(content: Text('Group updated successfully!')),
                 );
                 Navigator.pop(context);
               } catch (e) {
@@ -188,6 +192,11 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
                                 hintText: "Group name",
                                 hintStyle: TextStyle(color: appTheme.gray400),
                               ),
+                              onChanged: (value) {
+                                setState(() {
+                                  inSync = true;
+                                });
+                              },
                             ),
                           ),
                         ],
@@ -204,6 +213,11 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
                           hintText: "Description",
                           hintStyle: TextStyle(color: appTheme.gray400),
                         ),
+                        onChanged: (value) {
+                          setState(() {
+                            inSync = true;
+                          });
+                        },
                         maxLines: 6,
                       ),
                     ),
@@ -215,7 +229,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
                         children: [
                           IconButton(
                             onPressed: () {
-                              _showMembersDialog(context);
+                              // _showMembersDialog(context);
                             },
                             icon: const Icon(Icons.person_add_alt_1_outlined,
                                 size: 30, color: Colors.grey),
@@ -236,45 +250,6 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
           ],
         ),
       ),
-    );
-  }
-  
-  void _showMembersDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: appTheme.blackA700,
-          title: const Text(
-            'Add members',
-            style: TextStyle(
-                fontSize: 20, color: Colors.white, fontWeight: FontWeight.w600),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Enter email',
-                  hintStyle: TextStyle(color: appTheme.gray400),
-                ),
-              ),
-              const SizedBox(height: 20),
-              CustomElevatedButton(
-                text: "Add",
-                onPressed: () {
-                  // Add member
-
-                },
-                width: 100,
-                textStyle: theme.textTheme.bodyLarge,
-                buttonStyle: CustomButton.none,
-              )
-            ],
-          ),
-        );
-      },
     );
   }
 }

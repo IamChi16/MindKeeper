@@ -7,8 +7,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:reminder_app/services/auth_service.dart';
-import 'package:reminder_app/services/image_service.dart';
 import '../../app/app_export.dart';
 import '../../widgets/appstyle.dart';
 import '../../widgets/custom_container.dart';

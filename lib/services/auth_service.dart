@@ -143,6 +143,20 @@ class AuthService {
       'photoId': imageId,
     });
   }
+  
+  Future<String> getUserIdByEmail(String email) async {
+  final query = await FirebaseFirestore.instance
+      .collection('users')
+      .where('email', isEqualTo: email)
+      .get();
+
+  if (query.docs.isNotEmpty) {
+    return query.docs.first.id;
+  } else {
+    throw Exception('User with email $email not found');
+  }
+}
+
 }
 
 exceptionHandler(String code) {

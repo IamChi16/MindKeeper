@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:reminder_app/models/category_model.dart';
@@ -21,26 +24,26 @@ class DatabaseService {
 
   User? user = FirebaseAuth.instance.currentUser;
 
-  Future<DocumentReference> addTodoTask(String title, String description,
-      String? priority, DateTime? dueDate) async {
+  Future<String> addTodoTask(String title, String description, String? priority,
+      DateTime? dueDate) async {
     dueDate ??= DateTime.now();
     final String formattedDueDate = DateFormat('EEE, d MMMM').format(dueDate);
-    try {
-      if (title.isEmpty) {
-        throw Exception('Title cannot be empty');
-      }
-      return await taskCollection.add({
-        'uid': user!.uid,
-        'title': title,
-        'description': description,
-        'priority': priority,
-        'isCompleted': false,
-        'time': '${DateTime.now().day}/${DateTime.now().month}',
-        'duedate': formattedDueDate,
-      });
-    } on Exception catch (e) {
-      throw e;
+
+    if (title.isEmpty) {
+      throw Exception('Title cannot be empty');
     }
+
+    final taskDoc = await taskCollection.add({
+      'uid': user!.uid,
+      'title': title,
+      'description': description,
+      'priority': priority,
+      'isCompleted': false,
+      'time': '${DateTime.now().day}/${DateTime.now().month}',
+      'duedate': formattedDueDate,
+    });
+
+    return taskDoc.id; // Return the taskId
   }
 
   //update task
@@ -112,7 +115,7 @@ class DatabaseService {
         .where('uid', isEqualTo: user!.uid)
         .where('duedate',
             isEqualTo: DateFormat('EEE, d MMMM')
-                .format(DateTime.now().add(Duration(days: 1))))
+                .format(DateTime.now().add(const Duration(days: 1))))
         .snapshots()
         .map(_taskListFromSnapshot);
   }
@@ -197,7 +200,7 @@ class DatabaseService {
     return await categoryCollection.add({
       'uid': user!.uid,
       'name': name,
-      'color': color,
+      'color': color.value,
     });
   }
 
@@ -214,7 +217,7 @@ class DatabaseService {
       return Category(
         id: doc.id,
         name: doc['name'] ?? '',
-        color: Color(doc['color']),
+        color: Color(doc['color'] ?? 0xFFFFFFFF),
       );
     }).toList();
   }
@@ -276,13 +279,13 @@ class DatabaseService {
 
   //update Group
   Future<void> updateGroup(
-      String id, String name, String description, Image image) async {
+      String id, String name, String description, String? imageId) async {
     final updateGroupCollection =
         FirebaseFirestore.instance.collection('groups').doc(id);
     return await updateGroupCollection.update({
       'name': name,
       'description': description,
-      'image': image,
+      'photoId': imageId,
     });
   }
 
@@ -324,6 +327,7 @@ class DatabaseService {
     bool userExists = await checkUserExists(member.uid);
 
     if (userExists) {
+      // Thêm thành viên vào nhóm
       await groupCollection
           .doc(groupId)
           .collection('members')
@@ -333,8 +337,76 @@ class DatabaseService {
         'name': member.name,
         'role': member.role,
       });
+
+      // Gửi thông báo qua FCM
+      await sendFCMNotification(
+        member.uid,
+        'You have been added to a group',
+        'You have been added to group $groupId. Check it out!',
+      );
     } else {
-      throw Exception('User not registered in the app');
+      // Gửi email mời tham gia
+      await sendEmailInvitation(member.email, 'Your Group Name');
+    }
+  }
+
+  Future<void> sendFCMNotification(
+      String userId, String title, String body) async {
+    // Lấy token của người dùng từ Firestore
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    String? deviceToken = userDoc.data()?['deviceToken'];
+
+    if (deviceToken == null) {
+      throw Exception('User does not have a registered device token.');
+    }
+
+    // Gửi thông báo qua FCM
+    const String serverKey = 'YOUR_SERVER_KEY'; // Thay bằng FCM Server Key
+    final Uri fcmUrl = Uri.parse('https://fcm.googleapis.com/fcm/send');
+
+    final response = await http.post(
+      fcmUrl,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'key=$serverKey',
+      },
+      body: '''
+    {
+      "to": "$deviceToken",
+      "notification": {
+        "title": "$title",
+        "body": "$body"
+      }
+    }
+    ''',
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to send FCM notification: ${response.body}');
+    }
+  }
+
+// Gửi email mời tham gia
+  Future<void> sendEmailInvitation(String email, String groupName) async {
+    final emailData = {
+      'to': email,
+      'message': {
+        'subject': 'Invitation to join our app',
+        'text':
+            'You have been invited to join the group $groupName in our app.',
+      },
+    };
+
+    await FirebaseFirestore.instance.collection('mail').add(emailData);
+  }
+
+  Future<void> saveDeviceToken(String userId) async {
+    String? token = await FirebaseMessaging.instance.getToken();
+    if (token != null) {
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'deviceToken': token,
+      });
     }
   }
 
@@ -406,8 +478,8 @@ class DatabaseService {
         'time': '${DateTime.now().day}/${DateTime.now().month}',
         'duedate': formattedDueDate,
       });
-    } on Exception catch (e) {
-      throw e;
+    } on Exception {
+      rethrow;
     }
   }
 

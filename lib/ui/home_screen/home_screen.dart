@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:reminder_app/services/database_service.dart';
 import 'package:reminder_app/ui/chart_screen/chart_screen.dart';
 import 'package:reminder_app/ui/group_screen/group_screen.dart';
 import 'package:reminder_app/ui/task_screen/add_task_screen.dart';
@@ -20,10 +19,9 @@ import 'package:reminder_app/widgets/appstyle.dart';
 import 'package:reminder_app/widgets/custom_elevated_button.dart';
 import 'package:reminder_app/widgets/custom_search_view.dart';
 import 'package:reminder_app/widgets/reusable_text.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../app/app_export.dart';
 import '../../models/category_model.dart';
-import '../../services/auth_service.dart';
+import '../../widgets/category_widget.dart';
 import '../profile_setting_screen/profile_setting.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -352,14 +350,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: appTheme.teal3001,
           ),
         ),
-        // SizedBox(
-        //   width: 25,
-        //   height: 25,
-        //   child: GestureDetector(
-        //     onTap: () {},
-        //     child: Icon(Icons.add, color: appTheme.indigo20001, size: 20),
-        //   ),
-        // ),
       ],
     );
   }
@@ -379,7 +369,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             height: 25,
             child: IconButton(
               onPressed: () {
-                showCategoryDialog(context);
+                _openCategoryDialog(context);
               },
               icon: Icon(
                 Icons.add,
@@ -393,102 +383,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void showCategoryDialog(BuildContext context, {Category? category}) {
-    final TextEditingController name =
-        TextEditingController(text: category?.name);
+  void _openCategoryDialog(BuildContext context, {Category? category}) {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: appTheme.blackA700,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(hintText: 'Category Name'),
-                style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
-              ),
-              const SizedBox(height: 20),
-              GestureDetector(
-                onTap: () async {
-                  Color? pickedColor;
-                  pickedColor = await showDialog(
-                    context: context,
-                    builder: (context) {
-                      Color tempColor = Colors.white;
-                      return AlertDialog(
-                        title: const Text('Pick a color'),
-                        content: SingleChildScrollView(
-                          child: BlockPicker(
-                            pickerColor: tempColor,
-                            onColorChanged: (color) {
-                              pickedColor = tempColor;
-                            },
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            child: const Text('Select'),
-                            onPressed: () {
-                              Navigator.of(context).pop(pickedColor);
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                  if (pickedColor != null) {
-                    setState(() {
-                      category?.color = pickedColor!;
-                    });
-                  }
-                },
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: category?.color ??
-                        Colors.white, // Replace with the picked color
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Close', style: TextStyle(fontSize: 16)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: appTheme.indigoA100,
-                foregroundColor: appTheme.whiteA700,
-              ),
-              onPressed: () async {
-                if (category == null) {
-                  await DatabaseService().addCategory(
-                    name.text,
-                    category?.color ?? Colors.white,
-                  );
-                } else {
-                  await DatabaseService().updateCategory(
-                    category.id,
-                    name.text,
-                    category.color,
-                  );
-                }
-                Navigator.pop(context);
-              },
-              child: Text(
-                category == null ? 'Add' : 'Save',
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-          ],
+        return CategoryDialog(
+          category: category,
+          onSave: (newCategory) async {
+            if (category == null) {
+              // Add a new category
+              await DatabaseService().addCategory(
+                newCategory.name,
+                newCategory.color,
+              );
+            } else {
+              // Update an existing category
+              await DatabaseService().updateCategory(
+                newCategory.id,
+                newCategory.name,
+                newCategory.color,
+              );
+            }
+          },
         );
       },
     );
@@ -524,7 +440,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         children: [
                           SlidableAction(
                               onPressed: (context) {
-                                showCategoryDialog(context,
+                                _openCategoryDialog(context,
                                     category: categories[index]);
                               },
                               icon: Icons.edit,
@@ -532,8 +448,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               backgroundColor: Colors.transparent),
                           SlidableAction(
                             onPressed: (context) {
-                              _databaseService
-                                  .deleteCategory(categories[index].id);
+                              _showDeleteConfirmationDialog(
+                                  context, categories[index]);
                             },
                             icon: Icons.delete,
                             foregroundColor: appTheme.red500,
@@ -558,6 +474,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               return const CircularProgressIndicator();
             }
           }),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context, Category cate) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: appTheme.blackA700,
+          title: const Center(
+            child: Text('Are you sure you want to delete this category?',
+                textAlign: TextAlign.center),
+          ),
+          titleTextStyle: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+          ),
+          content: Text(
+            'The category will be permanently deleted and cannot restore.',
+            style: TextStyle(fontSize: 16, color: appTheme.whiteA700),
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Cancel',
+                style: TextStyle(fontSize: 16, color: Colors.indigo[300]),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: appTheme.red500,
+                foregroundColor: appTheme.whiteA700,
+              ),
+              onPressed: () async {
+                await _databaseService.deleteCategory(cate.id);
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Delete',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '/widgets/custom_elevated_button.dart';
 import '/widgets/reusable_text.dart';
 import '../../app/app_export.dart';
-import '../../services/auth_service.dart';
 import '/widgets/custom_text_form.dart';
 
 class ForgotPassword extends StatefulWidget {

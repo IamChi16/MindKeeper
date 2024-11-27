@@ -14,7 +14,6 @@ class _OnboadingOneState extends State<OnboadingOne> {
   final PageController pageController = PageController();
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     return SafeArea(
         child: Scaffold(
       body: PageView(

@@ -4,7 +4,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
 import 'package:reminder_app/models/tasks_model.dart';
-import 'package:reminder_app/services/database_service.dart';
 import '../../app/app_export.dart';
 import '../../widgets/appstyle.dart';
 import '../../widgets/counter_notifier.dart';

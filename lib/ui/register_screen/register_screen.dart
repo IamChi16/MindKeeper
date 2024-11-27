@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:reminder_app/services/auth_service.dart';
 import 'package:reminder_app/ui/auth/verification_screen.dart';
 import '../../app/app_export.dart';
 import '../../widgets/custom_elevated_button.dart';

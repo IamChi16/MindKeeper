@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:reminder_app/models/group_model.dart';
 import '../../app/app_export.dart';
-import '../../services/database_service.dart';
 import '../../widgets/appstyle.dart';
 import '../../widgets/reusable_text.dart';
 import 'add_group_screen.dart';
+import 'edit_group_screen.dart';
 
 class GroupScreen extends StatefulWidget {
   const GroupScreen({super.key});
@@ -97,32 +97,50 @@ class _GroupScreenState extends State<GroupScreen> {
                 Group group = groupList[index];
                 return GestureDetector(
                   onTap: () {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => GroupDetailsScreen(
-                    //       groupName: group['name']!,
-                    //       groupDescription: group['description']!,
-                    //     ),
-                    //   ),
-                    // );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditGroupScreen(group: group),
+                      ),
+                    );
                   },
-                  child: Card(
-                    color: appTheme.blackA700,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: ListTile(
-                      title: Text(
-                        group.name,
-                        style:
-                            appStyle(16, appTheme.whiteA700, FontWeight.w600),
+                  child: Slidable(
+                    endActionPane:
+                        ActionPane(motion: const DrawerMotion(), children: [
+                      SlidableAction(
+                        onPressed: (context) {
+                          _databaseService.deleteGroup(group.id);
+                        },
+                        icon: Icons.edit,
+                        foregroundColor: appTheme.indigo30001,
+                        label: 'Edit',
                       ),
-                      subtitle: Text(
-                        group.description,
-                        style:
-                            appStyle(14, appTheme.gray400, FontWeight.normal),
+                      SlidableAction(
+                        onPressed: (context) {
+                          _databaseService.deleteGroup(group.id);
+                        },
+                        icon: Icons.delete,
+                        foregroundColor: appTheme.red500,
+                        label: 'Delete',
                       ),
-                      trailing: Icon(Icons.arrow_forward_ios,
-                          color: appTheme.whiteA700),
+                    ]),
+                    child: Card(
+                      color: appTheme.blackA700,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      child: ListTile(
+                        title: Text(
+                          group.name,
+                          style:
+                              appStyle(16, appTheme.whiteA700, FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          group.description,
+                          style:
+                              appStyle(14, appTheme.gray400, FontWeight.normal),
+                        ),
+                        trailing: Icon(Icons.arrow_forward_ios,
+                            color: appTheme.whiteA700),
+                      ),
                     ),
                   ),
                 );

@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -403,14 +401,14 @@ class DatabaseService {
     await FirebaseFirestore.instance.collection('mail').add(emailData);
   }
 
-  Future<void> saveDeviceToken(String userId) async {
-    String? token = await FirebaseMessaging.instance.getToken();
-    if (token != null) {
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({
-        'deviceToken': token,
-      });
-    }
-  }
+  // Future<void> saveDeviceToken(String userId) async {
+  //   String? token = await FirebaseMessaging.instance.getToken();
+  //   if (token != null) {
+  //     await FirebaseFirestore.instance.collection('users').doc(userId).update({
+  //       'deviceToken': token,
+  //     });
+  //   }
+  // }
 
   //update member role
   Future<void> updateMemberRole(

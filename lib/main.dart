@@ -28,9 +28,7 @@ class MyApp extends StatelessWidget {
     return Sizer(builder: (context, orienation, deviceType){
       return MaterialApp(
         title: 'reminder_app',
-        theme: ThemeData(
-          scaffoldBackgroundColor: Colors.transparent,
-        ),
+        theme: ThemeHelper().themeData(),
         debugShowCheckedModeBanner: false,
         initialRoute: AppRoutes.initialRoute,
         routes: AppRoutes.routes,

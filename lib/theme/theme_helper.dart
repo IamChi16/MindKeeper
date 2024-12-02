@@ -7,69 +7,73 @@ LightCodeColors get appTheme => ThemeHelper().themeColor();
 ThemeData get theme => ThemeHelper().themeData();
 
 class ThemeHelper {
-
   var _appTheme = PrefUtils().getThemeData();
   //A map of custom color themes supported by the app
   final Map<String, LightCodeColors> _supportedCustomColor = {
     'lightCode': LightCodeColors(),
-    
+    'darkCode': DarkCodeColors(),
   };
   //A map of color schemes supported by the app
   final Map<String, ColorScheme> _supportedColorScheme = {
-    'lightCode': ColorSchemes.lightCodeColorScheme
+    'lightCode': ColorSchemes.lightCodeColorScheme,
+    'darkCode': ColorSchemes.darkCodeColorScheme,
   };
 
   // Changes the app theme
   void changeTheme(String theme) {
-    _appTheme = theme;
+    if (_supportedCustomColor.containsKey(theme)) {
+      _appTheme = theme;
+      PrefUtils().setThemeData(theme); // Save chosen theme
+    }
   }
 
-/// Returns the lightCode colors for the current theme
+  /// Returns the lightCode colors for the current theme
   LightCodeColors getThemeColors() {
-    return _supportedCustomColor[_appTheme] ?? LightCodeColors(); 
+    return _supportedCustomColor[_appTheme] ?? LightCodeColors();
   }
-/// Returns the current theme data
+
+  /// Returns the current theme data
   ThemeData getThemeData() {
-    var colorScheme = _supportedColorScheme[_appTheme] ?? ColorSchemes.lightCodeColorScheme;
+    var colorScheme =
+        _supportedColorScheme[_appTheme] ?? ColorSchemes.lightCodeColorScheme;
     return ThemeData(
-      visualDensity: VisualDensity.standard,
-      colorScheme: colorScheme,
-      textTheme: TextThemes.textTheme(colorScheme),
-      scaffoldBackgroundColor: colorScheme.onPrimary,
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          side: BorderSide(color: colorScheme.primary, width: 1),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
+        visualDensity: VisualDensity.standard,
+        colorScheme: colorScheme,
+        textTheme: TextThemes.textTheme(colorScheme),
+        scaffoldBackgroundColor: colorScheme.onPrimary,
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            side: BorderSide(color: colorScheme.primary, width: 1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+            visualDensity: const VisualDensity(
+              horizontal: -4,
+              vertical: -4,
+            ),
+            padding: EdgeInsets.zero,
           ),
-          visualDensity:  const VisualDensity(
-            horizontal: -4,
-            vertical: -4,
-          ),
-          padding: EdgeInsets.zero,
         ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: appTheme.indigo300.withOpacity(0.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: appTheme.indigo300.withOpacity(0.5),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+            elevation: 0,
+            visualDensity: const VisualDensity(
+              horizontal: -4,
+              vertical: -4,
+            ),
+            padding: EdgeInsets.zero,
           ),
-          elevation: 0,
-          visualDensity: const VisualDensity(
-            horizontal: -4,
-            vertical: -4,
-          ),
-          padding: EdgeInsets.zero,
         ),
-      ),
-      dividerTheme: DividerThemeData(
-        thickness: 1,
-        space: 1,
-        color: appTheme.gray500,
-      )
-    );
+        dividerTheme: DividerThemeData(
+          thickness: 1,
+          space: 1,
+          color: appTheme.gray500,
+        ));
   }
 
   LightCodeColors themeColor() => getThemeColors();
@@ -79,27 +83,27 @@ class ThemeHelper {
 
 class TextThemes {
   static textTheme(ColorScheme colorScheme) => TextTheme(
-    bodyLarge: TextStyle(
-      color: appTheme.whiteA700.withOpacity(0.87),
-      fontSize: 16,
-      fontFamily: 'Lato',
-      fontWeight: FontWeight.w400,
-    ),
-    bodySmall: TextStyle(
-      color: appTheme.whiteA700.withOpacity(0.87),
-      fontSize: 12,
-      fontFamily: 'Lato',
-      fontWeight: FontWeight.w400,
-    ),
-    headlineLarge: TextStyle(
-      color: appTheme.whiteA700.withOpacity(0.87),
-      fontSize: 32,
-      fontFamily: 'Lato',
-      fontWeight: FontWeight.w700,
-    ),
-
-  );
+        bodyLarge: TextStyle(
+          color: appTheme.whiteA700.withOpacity(0.87),
+          fontSize: 16,
+          fontFamily: 'Lato',
+          fontWeight: FontWeight.w400,
+        ),
+        bodySmall: TextStyle(
+          color: appTheme.whiteA700.withOpacity(0.87),
+          fontSize: 12,
+          fontFamily: 'Lato',
+          fontWeight: FontWeight.w400,
+        ),
+        headlineLarge: TextStyle(
+          color: appTheme.whiteA700.withOpacity(0.87),
+          fontSize: 32,
+          fontFamily: 'Lato',
+          fontWeight: FontWeight.w700,
+        ),
+      );
 }
+
 //Class containing the supported color schemes
 class ColorSchemes {
   static const lightCodeColorScheme = ColorScheme.light(
@@ -113,6 +117,17 @@ class ColorSchemes {
     onError: Color(0XFF4181CC),
     onSecondaryContainer: Color(0XFF1C1C1C),
   );
+  static const ColorScheme darkCodeColorScheme = ColorScheme.dark(
+    primary: Colors.blue,
+    onPrimary: Colors.black,
+  );
+}
+
+class DarkCodeColors extends LightCodeColors {
+  @override
+  Color get indigo300 => Colors.indigo[300]!;
+  @override
+  Color get gray500 => Colors.grey[500]!;
 }
 
 class LightCodeColors {

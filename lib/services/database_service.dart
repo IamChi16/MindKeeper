@@ -266,26 +266,35 @@ class DatabaseService {
   }
 
   //add Group
-  Future<DocumentReference> createGroup(String name, String description,
-      {String? imageId}) async {
+  Future<DocumentReference> createGroup(String name, String description) async {
     return await groupCollection.add({
       'uid': user!.uid,
       'name': name,
       'description': description,
-      'photoId': imageId,
-      'createdAt': FieldValue.serverTimestamp()
     });
+  }
+
+  //get group
+  Stream<Group> getGroup(String id) {
+    return groupCollection.doc(id).snapshots().map(_groupFromSnapshot);
+  }
+
+  Group _groupFromSnapshot(DocumentSnapshot snapshot) {
+    return Group(
+      id: snapshot.id,
+      name: snapshot['name'] ?? '',
+      description: snapshot['description'] ?? '',
+    );
   }
 
   //update Group
   Future<void> updateGroup(
-      String id, String name, String description, String? imageId) async {
+      String id, String name, String description) async {
     final updateGroupCollection =
         FirebaseFirestore.instance.collection('groups').doc(id);
     return await updateGroupCollection.update({
       'name': name,
       'description': description,
-      'photoId': imageId,
     });
   }
 
@@ -313,13 +322,6 @@ class DatabaseService {
         description: doc['description'] ?? '',
       );
     }).toList();
-  }
-
-  //add photo group
-  Future<void> saveImageUrl(String groupId, String imageId) async {
-    await groupCollection.doc(groupId).update({
-      'photoId': imageId,
-    });
   }
 
   //add member
@@ -481,6 +483,24 @@ class DatabaseService {
     } on Exception {
       rethrow;
     }
+  }
+
+  // update task
+
+  Future<void> updateGroupTask(String groupId, String taskId, String title,
+      String description, String priority, DateTime? duedate) async {
+    final String formattedDueDate =
+        DateFormat('EEE, d MMMM').format(duedate!);
+    return await groupCollection
+        .doc(groupId)
+        .collection('todos')
+        .doc(taskId)
+        .update({
+      'title': title,
+      'description': description,
+      'priority': priority,
+      'duedate': formattedDueDate,
+    });
   }
 
   Future<void> shareTaskWithMember(

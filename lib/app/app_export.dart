@@ -1,5 +1,6 @@
 export 'package:reminder_app/app/utils/image_constant.dart';
 export 'package:reminder_app/widgets/custom_image.dart';
+export 'package:reminder_app/widgets/appstyle.dart';
 export 'package:reminder_app/theme/theme_helper.dart';
 export 'package:reminder_app/theme/custom_button.dart';
 export 'package:reminder_app/theme/app_decoration.dart';

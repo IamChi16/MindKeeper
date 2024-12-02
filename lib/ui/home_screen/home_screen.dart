@@ -15,7 +15,6 @@ import 'package:reminder_app/ui/view_all_task_screen/completed_task_screen.dart'
 import 'package:reminder_app/ui/view_all_task_screen/pending_task_screen.dart';
 import 'package:reminder_app/ui/view_all_task_screen/today_task_screen.dart';
 import 'package:reminder_app/ui/view_all_task_screen/tomorrow_task_screen.dart';
-import 'package:reminder_app/widgets/appstyle.dart';
 import 'package:reminder_app/widgets/custom_elevated_button.dart';
 import 'package:reminder_app/widgets/custom_search_view.dart';
 import 'package:reminder_app/widgets/reusable_text.dart';
@@ -23,6 +22,7 @@ import '../../app/app_export.dart';
 import '../../models/category_model.dart';
 import '../../widgets/category_widget.dart';
 import '../profile_setting_screen/profile_setting.dart';
+import '../view_all_task_screen/calendar_view.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -349,6 +349,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Icons.calendar_month_rounded,
             color: appTheme.teal3001,
           ),
+          onPressed: (){
+            Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const CalendarView()));
+          }
         ),
       ],
     );
@@ -525,4 +529,4 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       },
     );
   }
-}
+} 

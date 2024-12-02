@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../app/app_export.dart';
 import '../../models/tasks_model.dart';
-import '../../widgets/appstyle.dart';
 import '../../widgets/custom_search_view.dart';
 import '../../widgets/reusable_text.dart';
 

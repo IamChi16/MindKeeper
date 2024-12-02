@@ -77,13 +77,13 @@ class AddTaskState extends State<AddTaskScreen> {
         children: [
           TextField(
             controller: title,
-            decoration: const InputDecoration(hintText: 'Title'),
+            decoration: InputDecoration(hintText: 'Title', hintStyle: TextStyle(color: appTheme.gray500)),
             style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: description,
-            decoration: const InputDecoration(hintText: 'Description'),
+            decoration: InputDecoration(hintText: 'Description', hintStyle: TextStyle(color: appTheme.gray500)),
             style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
             maxLines: 6,
           ),
@@ -147,8 +147,10 @@ class AddTaskState extends State<AddTaskScreen> {
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
+            fixedSize: const Size(90, 40),
             backgroundColor: appTheme.indigoA100,
             foregroundColor: appTheme.whiteA700,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
           onPressed: () async {
             if (task == null) {

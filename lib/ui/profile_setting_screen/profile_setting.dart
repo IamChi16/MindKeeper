@@ -37,9 +37,9 @@ class _ProfileSettingState extends State<ProfileSetting> {
     _loadUserProfile();
   }
 
-   _loadUserProfile() async {
+  _loadUserProfile() async {
     var user =
-         await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
     String? photoId = user.data()?['photoId'];
 
     if (photoId != null) {
@@ -98,41 +98,63 @@ class _ProfileSettingState extends State<ProfileSetting> {
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _photoBase64 != null
-                    ? CircleAvatar(
-                        radius: 22.5,
-                        backgroundImage: MemoryImage(
-                          base64Decode(_photoBase64!),
-                        ),
-                      )
-                    : const Icon(Icons.account_circle_rounded,
-                        size: 45, color: Colors.grey),
-                const SizedBox(width: 10),
-                StreamBuilder(
-                  stream: _authService.user,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return ReusableText(
-                        text: snapshot.data?.displayName ?? 'User',
-                        style:
-                            appStyle(16, appTheme.whiteA700, FontWeight.bold),
-                      );
-                    } else {
-                      return const CircularProgressIndicator();
-                    }
-                  },
+                Row(
+                  children: [
+                    _photoBase64 != null
+                        ? CircleAvatar(
+                            radius: 22.5,
+                            backgroundImage: MemoryImage(
+                              base64Decode(_photoBase64!),
+                            ),
+                          )
+                        : const Icon(Icons.account_circle_rounded,
+                            size: 45, color: Colors.grey),
+                    const SizedBox(width: 10),
+                    StreamBuilder(
+                      stream: _authService.user,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          return ReusableText(
+                            text: snapshot.data?.displayName ?? 'User',
+                            style: appStyle(
+                                16, appTheme.whiteA700, FontWeight.bold),
+                          );
+                        } else {
+                          return const CircularProgressIndicator();
+                        }
+                      },
+                    ),
+                  ],
                 ),
+                Icon(Icons.arrow_forward_ios, color: appTheme.whiteA700),
               ],
             ),
-            Icon(Icons.arrow_forward_ios, color: appTheme.whiteA700),
+            Row(
+              children: [
+                ReusableText(
+                    text: "Change theme",
+                    style: theme.textTheme.bodyLarge ?? TextStyle()),
+                // Switch(
+                //   value:
+                //       ThemeHelper().themeData().brightness == Brightness.dark,
+                //   onChanged: (value) {
+                //     ThemeHelper().changeTheme(value ? 'darkCode' : 'lightCode');
+                //     setState(
+                //         () {}); // Hoặc dùng Provider, ValueNotifier để cập nhật
+                //   },
+                // )
+              ],
+            )
           ],
         ),
       ),
     );
   }
+
+  
 }

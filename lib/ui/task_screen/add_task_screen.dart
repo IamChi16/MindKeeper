@@ -3,7 +3,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:reminder_app/models/tasks_model.dart';
-import 'package:reminder_app/widgets/appstyle.dart';
 import '../../app/app_export.dart';
 import '../../models/category_model.dart';
 import '../../widgets/priority_widget.dart';

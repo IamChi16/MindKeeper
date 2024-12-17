@@ -22,9 +22,6 @@ class DatabaseService {
 
   User? user = FirebaseAuth.instance.currentUser;
 
-
-
-
   Future<String> addTodoTask(String title, String description, String? priority,
       DateTime? dueDate) async {
     dueDate ??= DateTime.now();
@@ -121,6 +118,18 @@ class DatabaseService {
         .map(_taskListFromSnapshot);
   }
 
+  Stream<List<Task>> get weektasks {
+    return taskCollection
+        .where('uid', isEqualTo: user!.uid)
+        .where('duedate',
+            isGreaterThanOrEqualTo:
+                DateFormat('EEE, d MMMM').format(DateTime.now()),
+            isLessThanOrEqualTo: DateFormat('EEE, d MMMM')
+                .format(DateTime.now().add(const Duration(days: 7))))
+        .snapshots()
+        .map(_taskListFromSnapshot);
+  }
+
   List<Task> _taskListFromSnapshot(QuerySnapshot snapshot) {
     return snapshot.docs.map((doc) {
       // final DateTime dueDateTime = DateTime.parse(doc['duedate']);
@@ -206,6 +215,19 @@ class DatabaseService {
   }
 
   //get categories
+
+//   Future<List<Category>> getCategories() async {
+//   final querySnapshot = await categoryCollection.get();
+//   return querySnapshot.docs.map((doc) {
+//     final data = doc.data() as Map<String, dynamic>;
+//     return Category(
+//       id: doc.id,
+//       name: data['name'],
+//       color: Color(data['color'] ?? 0xFFFFFFFF),
+//     );
+//   }).toList();
+// }
+
   Stream<List<Category>> get categories {
     return categoryCollection
         .where('uid', isEqualTo: user!.uid)
@@ -289,8 +311,7 @@ class DatabaseService {
   }
 
   //update Group
-  Future<void> updateGroup(
-      String id, String name, String description) async {
+  Future<void> updateGroup(String id, String name, String description) async {
     final updateGroupCollection =
         FirebaseFirestore.instance.collection('groups').doc(id);
     return await updateGroupCollection.update({
@@ -330,7 +351,6 @@ class DatabaseService {
     bool userExists = await checkUserExists(member.uid);
 
     if (userExists) {
-      // Thêm thành viên vào nhóm
       await groupCollection
           .doc(groupId)
           .collection('members')
@@ -341,21 +361,18 @@ class DatabaseService {
         'role': member.role,
       });
 
-      // Gửi thông báo qua FCM
       await sendFCMNotification(
         member.uid,
         'You have been added to a group',
         'You have been added to group $groupId. Check it out!',
       );
     } else {
-      // Gửi email mời tham gia
       await sendEmailInvitation(member.email, 'Your Group Name');
     }
   }
 
   Future<void> sendFCMNotification(
       String userId, String title, String body) async {
-    // Lấy token của người dùng từ Firestore
     final userDoc =
         await FirebaseFirestore.instance.collection('users').doc(userId).get();
     String? deviceToken = userDoc.data()?['deviceToken'];
@@ -364,8 +381,7 @@ class DatabaseService {
       throw Exception('User does not have a registered device token.');
     }
 
-    // Gửi thông báo qua FCM
-    const String serverKey = 'YOUR_SERVER_KEY'; // Thay bằng FCM Server Key
+    const String serverKey = 'YOUR_SERVER_KEY';
     final Uri fcmUrl = Uri.parse('https://fcm.googleapis.com/fcm/send');
 
     final response = await http.post(
@@ -390,7 +406,6 @@ class DatabaseService {
     }
   }
 
-// Gửi email mời tham gia
   Future<void> sendEmailInvitation(String email, String groupName) async {
     final emailData = {
       'to': email,
@@ -490,8 +505,7 @@ class DatabaseService {
 
   Future<void> updateGroupTask(String groupId, String taskId, String title,
       String description, String priority, DateTime? duedate) async {
-    final String formattedDueDate =
-        DateFormat('EEE, d MMMM').format(duedate!);
+    final String formattedDueDate = DateFormat('EEE, d MMMM').format(duedate!);
     return await groupCollection
         .doc(groupId)
         .collection('todos')

@@ -2,9 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:reminder_app/app/app_export.dart';
 import 'package:reminder_app/ui/group_screen/widget/group_widget.dart';
-import 'package:reminder_app/widgets/custom_container.dart';
 import 'package:reminder_app/widgets/custom_elevated_button.dart';
-import 'package:reminder_app/widgets/reusable_text.dart';
 import '../../models/group_model.dart';
 
 class AddGroupScreen extends StatefulWidget {

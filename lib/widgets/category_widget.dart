@@ -7,7 +7,7 @@ import '../models/category_model.dart';
 class CategoryDialog extends StatefulWidget {
   final Category? category;
   final Function(Category)
-      onSave; // Callback to return the created/updated category
+      onSave;
 
   const CategoryDialog({
     super.key,

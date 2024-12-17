@@ -8,7 +8,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../app/app_export.dart';
-import '../../widgets/appstyle.dart';
 import '../../widgets/custom_container.dart';
 import '../../widgets/custom_elevated_button.dart';
 import '../../widgets/reusable_text.dart';

@@ -4,9 +4,7 @@ import 'package:reminder_app/models/group_model.dart';
 import 'package:reminder_app/ui/group_screen/widget/group_widget.dart';
 
 import '../../app/app_export.dart';
-import '../../widgets/custom_container.dart';
 import '../../widgets/custom_elevated_button.dart';
-import '../../widgets/reusable_text.dart';
 
 class EditGroupScreen extends StatefulWidget {
   Group group;

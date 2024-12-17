@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:reminder_app/models/group_model.dart';
 import '../../app/app_export.dart';
-import '../../widgets/appstyle.dart';
 import '../../widgets/reusable_text.dart';
 import 'add_group_screen.dart';
 import 'edit_group_screen.dart';

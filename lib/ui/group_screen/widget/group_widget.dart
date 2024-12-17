@@ -1,3 +1,5 @@
+// ignore_for_file: must_be_immutable
+
 import 'package:flutter/material.dart';
 
 import '../../../app/app_export.dart';
@@ -130,10 +132,9 @@ class _GroupWidgetState extends State<GroupWidget> {
               CustomElevatedButton(
                 text: "Add",
                 onPressed: () {
-                  // Add member
+                  
                 },
-                width: 100,
-                textStyle: theme.textTheme.bodyLarge,
+                width: 100,              textStyle: theme.textTheme.bodyLarge,
                 buttonStyle: CustomButton.none,
               )
             ],

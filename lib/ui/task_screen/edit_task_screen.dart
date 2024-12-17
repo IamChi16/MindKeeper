@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:reminder_app/models/tasks_model.dart';
-import 'package:reminder_app/widgets/appstyle.dart';
 import 'package:reminder_app/widgets/reusable_text.dart';
 import '../../app/app_export.dart';
 import '../../models/subtask_model.dart';
@@ -172,7 +171,9 @@ class _EditTaskState extends State<EditTask> {
                       Row(
                     children: [
                       IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          //_showCategoryDialog(context, widget.task);
+                        },
                         icon: Icon(
                           Icons.bookmark_outlined,
                           color: appTheme.gray50001,
@@ -338,4 +339,20 @@ class _EditTaskState extends State<EditTask> {
       ],
     );
   }
+//   void _showCategoryDialog(BuildContext context, Task task) async {
+//   final categories = await _databaseService.categories;
+//   showDialog(
+//     context: context,
+//     builder: (context) {
+//       return (
+//         categories: categories,
+//         onCategorySelected: (category) {
+//           _databaseService.addTaskToCategory(category.id, task.id);
+//           Navigator.of(context).pop();
+//         },
+//       );
+//     },
+//   );
+// }
+
 }

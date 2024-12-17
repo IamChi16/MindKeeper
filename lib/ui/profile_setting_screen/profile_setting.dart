@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:reminder_app/widgets/custom_container.dart';
 import '../../app/app_export.dart';
-import '../../widgets/appstyle.dart';
 import '../../widgets/reusable_text.dart';
 
 class ProfileSetting extends StatefulWidget {
@@ -97,64 +96,89 @@ class _ProfileSettingState extends State<ProfileSetting> {
         });
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    _photoBase64 != null
-                        ? CircleAvatar(
-                            radius: 22.5,
-                            backgroundImage: MemoryImage(
-                              base64Decode(_photoBase64!),
-                            ),
-                          )
-                        : const Icon(Icons.account_circle_rounded,
-                            size: 45, color: Colors.grey),
-                    const SizedBox(width: 10),
-                    StreamBuilder(
-                      stream: _authService.user,
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          return ReusableText(
-                            text: snapshot.data?.displayName ?? 'User',
-                            style: appStyle(
-                                16, appTheme.whiteA700, FontWeight.bold),
-                          );
-                        } else {
-                          return const CircularProgressIndicator();
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                Icon(Icons.arrow_forward_ios, color: appTheme.whiteA700),
-              ],
-            ),
-            Row(
-              children: [
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      _photoBase64 != null
+                          ? CircleAvatar(
+                              radius: 22.5,
+                              backgroundImage: MemoryImage(
+                                base64Decode(_photoBase64!),
+                              ),
+                            )
+                          : const Icon(Icons.account_circle_rounded,
+                              size: 45, color: Colors.grey),
+                      const SizedBox(width: 10),
+                      StreamBuilder(
+                        stream: _authService.user,
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            return ReusableText(
+                              text: snapshot.data?.displayName ?? 'User',
+                              style: appStyle(
+                                  16, appTheme.whiteA700, FontWeight.bold),
+                            );
+                          } else {
+                            return const CircularProgressIndicator();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  Icon(Icons.arrow_forward_ios, color: appTheme.whiteA700),
+                ],
+              ),
+              Row(
+                children: [
+                  ReusableText(
+                      text: "Change theme",
+                      style: theme.textTheme.bodyLarge ?? const TextStyle()),
+                  // Switch(
+                  //   value:
+                  //       ThemeHelper().themeData().brightness == Brightness.dark,
+                  //   onChanged: (value) {
+                  //     ThemeHelper().changeTheme(value ? 'darkCode' : 'lightCode');
+                  //     setState(
+                  //         () {});
+                  //   },
+                  // )
+                ],
+              ),
+              Row(
+                children: [
+                  ReusableText(
+                      text: "Change language",
+                      style: theme.textTheme.bodyLarge ?? const TextStyle()),
+                  // Switch(
+                  //   value: ThemeHelper().themeData().brightness == Brightness.dark,
+                  //   onChanged: (value) {
+                  //     ThemeHelper().changeTheme(value ? 'darkCode' : 'lightCode');
+                  //     setState(
+                  //         () {});
+                  //   },
+                  // )
+                ],
+              ),
+              Row(children: [
                 ReusableText(
-                    text: "Change theme",
-                    style: theme.textTheme.bodyLarge ?? TextStyle()),
+                    text: "Task in a week",
+                    style: theme.textTheme.bodyLarge ?? const TextStyle()),
                 // Switch(
-                //   value:
-                //       ThemeHelper().themeData().brightness == Brightness.dark,
+                //   value: ThemeHelper().themeData().brightness == Brightness.dark,
                 //   onChanged: (value) {
                 //     ThemeHelper().changeTheme(value ? 'darkCode' : 'lightCode');
                 //     setState(
-                //         () {}); // Hoặc dùng Provider, ValueNotifier để cập nhật
+                //         () {});
                 //   },
                 // )
-              ],
-            )
-          ],
-        ),
-      ),
+              ]),
+            ],
+          )),
     );
   }
-
-  
 }

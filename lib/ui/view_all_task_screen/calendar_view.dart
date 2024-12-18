@@ -87,26 +87,6 @@ class _CalendarViewState extends State<CalendarView> {
               return isSameDay(_selectedDay, day);
             },
             eventLoader: (day) => _events[day] ?? [],
-            // startingDayOfWeek: StartingDayOfWeek.monday,
-            // calendarStyle: CalendarStyle(
-            //   selectedDecoration: BoxDecoration(
-            //     color: appTheme.blackA700,
-            //     shape: BoxShape.circle,
-            //   ),
-            //   todayDecoration: BoxDecoration(
-            //     color: appTheme.blackA700,
-            //     shape: BoxShape.circle,
-            //   ),
-            //   selectedTextStyle: TextStyle(color: appTheme.whiteA700),
-            //   todayTextStyle: TextStyle(color: appTheme.whiteA700),
-            // ),
-            // headerStyle: HeaderStyle(
-            //   formatButtonVisible: false,
-            //   titleCentered: true,
-            //   titleTextStyle: appStyle(18, appTheme.whiteA700, FontWeight.w600),
-            //   leftChevronIcon: Icon(Icons.arrow_back_ios_new_rounded, color: appTheme.whiteA700),
-            //   rightChevronIcon: Icon(Icons.arrow_forward_ios_rounded, color: appTheme.whiteA700),
-            // ),
             onDaySelected: _onDaySelected,
             onFormatChanged: _onCalendarFormatChanged,
           ),

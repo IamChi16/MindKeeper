@@ -53,7 +53,13 @@ dependencies:
   flutter_colorpicker:
   sqflite: ^2.4.0
   table_calendar: ^3.1.2
+  flutter_local_notifications: ^18.0.1
+  firebase_messaging: ^15.1.5
+  timezone: ^0.10.0
+  syncfusion_flutter_charts: ^27.2.5
+  syncfusion_flutter_gauges: ^27.2.5
   intl:
+  
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +71,12 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.2
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -105,24 +105,18 @@ class _GroupScreenState extends State<GroupScreen> {
                   },
                   child: Slidable(
                     endActionPane:
-                        ActionPane(motion: const DrawerMotion(), children: [
-                      SlidableAction(
-                        onPressed: (context) {
-                          _databaseService.deleteGroup(group.id);
-                        },
-                        icon: Icons.edit,
-                        foregroundColor: appTheme.indigo30001,
-                        label: 'Edit',
-                      ),
+                      ActionPane(motion: const DrawerMotion(), extentRatio: 0.2 ,children: [
                       SlidableAction(
                         onPressed: (context) {
                           _databaseService.deleteGroup(group.id);
                         },
                         icon: Icons.delete,
                         foregroundColor: appTheme.red500,
+                        backgroundColor: appTheme.blackA700,
                         label: 'Delete',
                       ),
-                    ]),
+                    ],
+                    ),
                     child: Card(
                       color: appTheme.blackA700,
                       margin: const EdgeInsets.symmetric(vertical: 8),

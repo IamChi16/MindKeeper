@@ -2,7 +2,7 @@ class ImageConstant {
   //Image folder path
   static String imagePath = 'assets/images';
   //Intro images
-  static String imgIntro = '$imagePath/img_intro.png';
+  static String imgIntro = '$imagePath/app_icon.png';
   //Onboarding images
   static String imgOnboarding = '$imagePath/onboarding.png';
   static String imgOnboarding1 = '$imagePath/onboarding1.png';

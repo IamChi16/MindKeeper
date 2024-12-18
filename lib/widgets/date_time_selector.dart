@@ -5,7 +5,7 @@ class DateTimeSelector extends StatefulWidget {
   final TimeOfDay initialTime; 
   final Function(DateTime, TimeOfDay) onDateTimeChanged;
 
-  const DateTimeSelector({required this.initialDateTime, required this.initialTime, required this.onDateTimeChanged});
+  const DateTimeSelector({super.key, required this.initialDateTime, required this.initialTime, required this.onDateTimeChanged});
 
   @override
   _DateTimeSelectorState createState() => _DateTimeSelectorState();

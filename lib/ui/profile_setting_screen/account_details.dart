@@ -102,7 +102,7 @@ class _AccountSettingScreenState extends State<AccountDetails> {
         leading: IconButton(
             iconSize: 25,
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(context, true);
             },
             icon: Icon(
               Icons.arrow_back_ios_new_rounded,

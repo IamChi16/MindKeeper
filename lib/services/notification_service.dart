@@ -1,7 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_local_notifications/src/platform_specifics/android/notification_details.dart';
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz_data; // Import timezone data
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -12,8 +11,11 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   Future<void> initialize() async {
+    // Initialize timezone data
+    tz_data.initializeTimeZones();
+
     final AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('app_icon');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     final DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -25,47 +27,45 @@ class NotificationService {
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
     );
-    void _onNotificationTap(NotificationResponse response) {
+    
+    void onNotificationTap(NotificationResponse response) {
       // Handle notification tap
     }
 
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
-      onDidReceiveNotificationResponse: _onNotificationTap,
-    );
-
-    final AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-            'instant_notification', 'Instant Notification',
-            channelDescription: 'Channel for instant notification',
-            importance: Importance.max);
-    final NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      'Title of Notification',
-      'Body of Notification',
-      platformChannelSpecifics,
-      payload: 'New Payload',
+      onDidReceiveNotificationResponse: onNotificationTap,
     );
   }
 
-  Future showNotification() async {
-    final AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-            'instant_notification', 'Instant Notification',
-            channelDescription: 'Channel for instant notification',
-            importance: Importance.max);
-    final NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      'Title of Notification',
-      'Body of Notification',
-      platformChannelSpecifics,
-      payload: 'New Payload',
-    );
+  Future<void> scheduleNotification(DateTime scheduledDate) async {
+  final DateTime notificationDate = scheduledDate.subtract(Duration(minutes: 5));
+  
+  if (notificationDate.isBefore(DateTime.now())) {
+    return;
   }
+
+  final AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+          'scheduled_notification', 'Scheduled Notification',
+          channelDescription: 'Channel for scheduled notification',
+          importance: Importance.max);
+
+  final NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics);
+
+  await flutterLocalNotificationsPlugin.zonedSchedule(
+    0,
+    'Task Reminder',
+    'Your task is due in 5 minutes!',
+    tz.TZDateTime.from(notificationDate, tz.local),
+    platformChannelSpecifics,
+    androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    uiLocalNotificationDateInterpretation:
+        UILocalNotificationDateInterpretation.absoluteTime,
+  );
+}
+
 
   Future<void> cancelNotification() async {
     await flutterLocalNotificationsPlugin.cancel(0);
@@ -73,55 +73,5 @@ class NotificationService {
 
   Future<void> cancelAllNotifications() async {
     await flutterLocalNotificationsPlugin.cancelAll();
-  }
-
-  Future<void> scheduleNotification() async {
-    final AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-            'scheduled_notification', 'Scheduled Notification',
-            channelDescription: 'Channel for scheduled notification',
-            importance: Importance.max);
-    final NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      0,
-      'Title of Notification',
-      'Body of Notification',
-      tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)),
-      platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
-  }
-
-  Future<void> showDailyAtTime() async {
-    final AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails('daily_notification', 'Daily Notification',
-            channelDescription: 'Channel for daily notification',
-            importance: Importance.max);
-    final NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      1,
-      'Title of Notification',
-      'Body of Notification',
-      _nextInstanceOfTenAM(),
-      platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      payload: 'scheduled payload',
-    );
-  }
-
-  tz.TZDateTime _nextInstanceOfTenAM() {
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate =
-        tz.TZDateTime(tz.local, now.year, now.month, now.day, 10);
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-    }
-    return scheduledDate;
   }
 }

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../app/app_export.dart';
+import '../../services/task_service.dart';
 import '../../widgets/counter_notifier.dart';
 import '../../widgets/custom_search_view.dart';
 import '../../widgets/tasklistwidget.dart';
@@ -19,7 +20,7 @@ bool show = true;
 class _TomorrowTaskState extends State<TomorrowTask> {
   User? user = FirebaseAuth.instance.currentUser;
   late String uid;
-  final DatabaseService _databaseService = DatabaseService();
+  final TaskService _taskService = TaskService();
   final TextEditingController search = TextEditingController();
   String selectedPriority = 'default';
   bool isDone = false;
@@ -56,6 +57,19 @@ class _TomorrowTaskState extends State<TomorrowTask> {
             "Tomorrow Task",
             style: appStyle(18, Colors.white, FontWeight.w600),
           ),
+          actions: [
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  show = !show;
+                });
+              },
+              icon: Icon(
+                Icons.filter_alt_outlined,
+                color: appTheme.whiteA700,
+              ),
+            ),
+          ],
           centerTitle: true,
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(80),
@@ -90,7 +104,7 @@ class _TomorrowTaskState extends State<TomorrowTask> {
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         body: TaskListWidget(
-          taskStream: _databaseService.tomorrowtasks,
+          taskStream: _taskService.tomorrowtasks,
           emptyMessage: 'No pending tasks!',
         ),
       ),

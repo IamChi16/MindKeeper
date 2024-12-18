@@ -11,6 +11,9 @@ import '../models/member_model.dart';
 import '../models/subtask_model.dart';
 
 class DatabaseService {
+  final CollectionReference notificationsCollection =
+      FirebaseFirestore.instance.collection('notifications');
+
   final CollectionReference taskCollection =
       FirebaseFirestore.instance.collection('tasks');
 
@@ -21,10 +24,13 @@ class DatabaseService {
       FirebaseFirestore.instance.collection('categories');
 
   User? user = FirebaseAuth.instance.currentUser;
+  final CollectionReference userCollection =
+      FirebaseFirestore.instance.collection('users');
 
   Future<String> addTodoTask(String title, String description, String? priority,
-      DateTime? dueDate) async {
+      DateTime? dueDate, TimeOfDay? time) async {
     dueDate ??= DateTime.now();
+    time ??= TimeOfDay.now();
     final String formattedDueDate = DateFormat('EEE, d MMMM').format(dueDate);
 
     if (title.isEmpty) {
@@ -37,7 +43,7 @@ class DatabaseService {
       'description': description,
       'priority': priority,
       'isCompleted': false,
-      'time': '${DateTime.now().day}/${DateTime.now().month}',
+      'time': '${time.hour}:${time.minute}',
       'duedate': formattedDueDate,
     });
 
@@ -46,13 +52,14 @@ class DatabaseService {
 
   //update task
   Future<void> updateTask(String id, String title, String description,
-      String priority, DateTime? duedate) async {
+      String priority, DateTime? duedate, TimeOfDay? time) async {
     final String formattedDueDate = DateFormat('EEE, d MMMM').format(duedate!);
     return await taskCollection.doc(id).update({
       'title': title,
       'description': description,
       'priority': priority,
       'duedate': formattedDueDate,
+      'time': '${time!.hour}:${time.minute}',
     });
   }
 
@@ -90,6 +97,21 @@ class DatabaseService {
         .map(_taskListFromSnapshot);
   }
 
+  Future<int> countTotalTasks() async {
+    final querySnapshot = await taskCollection
+        .where('uid', isEqualTo: user!.uid)
+        .get();
+    return querySnapshot.docs.length;
+  }
+
+  Future<int> countPendingTasks() async {
+    final querySnapshot = await taskCollection
+        .where('uid', isEqualTo: user!.uid)
+        .where('isCompleted', isEqualTo: false)
+        .get();
+    return querySnapshot.docs.length;
+  }
+
   //get completed tasks
   Stream<List<Task>> get completedtasks {
     return taskCollection
@@ -97,6 +119,14 @@ class DatabaseService {
         .where('isCompleted', isEqualTo: true)
         .snapshots()
         .map(_taskListFromSnapshot);
+  }
+
+  Future<int> countCompletedTasks() async {
+    final querySnapshot = await taskCollection
+        .where('uid', isEqualTo: user!.uid)
+        .where('isCompleted', isEqualTo: true)
+        .get();
+    return querySnapshot.docs.length;
   }
 
   Stream<List<Task>> get todaytasks {
@@ -108,6 +138,35 @@ class DatabaseService {
         .map(_taskListFromSnapshot);
   }
 
+  Future<int> countTodayPendingTasks() async {
+    final querySnapshot = await taskCollection
+        .where('uid', isEqualTo: user!.uid)
+        .where('isCompleted', isEqualTo: false)
+        .where('duedate',
+            isEqualTo: DateFormat('EEE, d MMMM').format(DateTime.now()))
+        .get();
+    return querySnapshot.docs.length;
+  }
+
+  Future<int> countTodayCompletedTasks() async {
+    final querySnapshot = await taskCollection
+        .where('uid', isEqualTo: user!.uid)
+        .where('isCompleted', isEqualTo: true)
+        .where('duedate',
+            isEqualTo: DateFormat('EEE, d MMMM').format(DateTime.now()))
+        .get();
+    return querySnapshot.docs.length;
+  }
+
+  Future<int> countTodayTotalTasks() async {
+    final querySnapshot = await taskCollection
+        .where('uid', isEqualTo: user!.uid)
+        .where('duedate',
+            isEqualTo: DateFormat('EEE, d MMMM').format(DateTime.now()))
+        .get();
+    return querySnapshot.docs.length;
+  }
+
   Stream<List<Task>> get tomorrowtasks {
     return taskCollection
         .where('uid', isEqualTo: user!.uid)
@@ -116,6 +175,17 @@ class DatabaseService {
                 .format(DateTime.now().add(const Duration(days: 1))))
         .snapshots()
         .map(_taskListFromSnapshot);
+  }
+
+  Future<int> countTomorrowPendingTasks() async {
+    final querySnapshot = await taskCollection
+        .where('uid', isEqualTo: user!.uid)
+        .where('isCompleted', isEqualTo: false)
+        .where('duedate',
+            isEqualTo: DateFormat('EEE, d MMMM')
+                .format(DateTime.now().add(const Duration(days: 1))))
+        .get();
+    return querySnapshot.docs.length;
   }
 
   Stream<List<Task>> get weektasks {
@@ -129,6 +199,39 @@ class DatabaseService {
         .snapshots()
         .map(_taskListFromSnapshot);
   }
+
+  Future<int> countWeekPendingTasks() async {
+    final querySnapshot = await taskCollection
+        .where('uid', isEqualTo: user!.uid)
+        .where('isCompleted', isEqualTo: false)
+        .where('duedate',
+            isEqualTo: DateFormat('EEE, d MMMM')
+                .format(DateTime.now().add(const Duration(days: 7))))
+        .get();
+    return querySnapshot.docs.length;
+  }
+
+  Future<int> countWeekCompletedTasks() async {
+    final querySnapshot = await taskCollection
+        .where('uid', isEqualTo: user!.uid)
+        .where('isCompleted', isEqualTo: true)
+        .where('duedate',
+            isEqualTo: DateFormat('EEE, d MMMM')
+                .format(DateTime.now().add(const Duration(days: 7))))
+        .get();
+    return querySnapshot.docs.length;
+  }
+
+  Future<int> countWeekTotalTasks() async {
+    final querySnapshot = await taskCollection
+        .where('uid', isEqualTo: user!.uid)
+        .where('duedate',
+            isEqualTo: DateFormat('EEE, d MMMM')
+                .format(DateTime.now().add(const Duration(days: 7))))
+        .get();
+    return querySnapshot.docs.length;
+  }
+
 
   List<Task> _taskListFromSnapshot(QuerySnapshot snapshot) {
     return snapshot.docs.map((doc) {
@@ -347,28 +450,49 @@ class DatabaseService {
   }
 
   //add member
-  Future<void> addMemberToGroup(String groupId, Member member) async {
-    bool userExists = await checkUserExists(member.uid);
-
-    if (userExists) {
-      await groupCollection
-          .doc(groupId)
-          .collection('members')
-          .doc(member.uid)
-          .set({
-        'email': member.email,
-        'name': member.name,
-        'role': member.role,
-      });
-
-      await sendFCMNotification(
-        member.uid,
-        'You have been added to a group',
-        'You have been added to group $groupId. Check it out!',
+  Future<void> addMemberToGroup(
+      BuildContext context, String groupId, String email) async {
+    try {
+      // Check if the user exists
+      String? userId = await getUserIdByEmail(email);
+      if (userId != null) {
+        // Send in-app notification to the registered user
+        await sendInAppNotification(userId, groupId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Invitation sent to $email')),
+        );
+      } else {
+        // Show message if the email is not registered
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('The email $email is not registered in the app.')),
+        );
+      }
+    } catch (e) {
+      print("Error adding member: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred. Please try again.')),
       );
-    } else {
-      await sendEmailInvitation(member.email, 'Your Group Name');
     }
+  }
+
+  Future<String?> getUserIdByEmail(String email) async {
+    var query = await userCollection.where('email', isEqualTo: email).get();
+    if (query.docs.isNotEmpty) {
+      return query.docs.first.id; // Return the user ID
+    }
+    return null; // User not found
+  }
+
+// Mock function to send in-app notification
+  Future<void> sendInAppNotification(String userId, String groupId) async {
+    // Implement in-app notification logic
+    await notificationsCollection.add({
+      'userId': userId,
+      'groupId': groupId,
+      'message': 'You have been invited to join a group.',
+      'status': 'pending',
+    });
   }
 
   Future<void> sendFCMNotification(

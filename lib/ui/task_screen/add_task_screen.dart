@@ -25,6 +25,7 @@ class AddTaskState extends State<AddTaskScreen> {
   DateTime selectedDate = DateTime.now();
   DateTime? pickedDate;
   String selectedPriority = 'default';
+  TimeOfDay selectedTime = TimeOfDay.now();
 
   bool inSync = false;
   FocusNode titleFocusNode = FocusNode();
@@ -76,13 +77,17 @@ class AddTaskState extends State<AddTaskScreen> {
         children: [
           TextField(
             controller: title,
-            decoration: InputDecoration(hintText: 'Title', hintStyle: TextStyle(color: appTheme.gray500)),
+            decoration: InputDecoration(
+                hintText: 'Title',
+                hintStyle: TextStyle(color: appTheme.gray500)),
             style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: description,
-            decoration: InputDecoration(hintText: 'Description', hintStyle: TextStyle(color: appTheme.gray500)),
+            decoration: InputDecoration(
+                hintText: 'Description',
+                hintStyle: TextStyle(color: appTheme.gray500)),
             style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
             maxLines: 6,
           ),
@@ -91,7 +96,7 @@ class AddTaskState extends State<AddTaskScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               IconButton(
-                icon: const Icon(Icons.calendar_today, color: Colors.white),
+                icon: Icon(Icons.calendar_today, color: appTheme.gray500),
                 onPressed: () async {
                   final pickedDate = await showDatePicker(
                     context: context,
@@ -104,6 +109,19 @@ class AddTaskState extends State<AddTaskScreen> {
                   }
                 },
               ),
+              IconButton(
+                  onPressed: () async {
+                    final TimeOfDay? pickedTime = await showTimePicker(
+                      context: context,
+                      initialTime: selectedTime,
+                    );
+                    if (pickedTime != null) {
+                      setState(() {
+                        selectedTime = pickedTime;
+                      });
+                    }
+                  },
+                  icon: Icon(Icons.timer_rounded, color: appTheme.gray500,)),
               IconButton(
                 onPressed: () {
                   _showPriorityDialog(context, task);
@@ -149,7 +167,8 @@ class AddTaskState extends State<AddTaskScreen> {
             fixedSize: const Size(90, 40),
             backgroundColor: appTheme.indigoA100,
             foregroundColor: appTheme.whiteA700,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
           onPressed: () async {
             if (task == null) {
@@ -159,8 +178,8 @@ class AddTaskState extends State<AddTaskScreen> {
                 );
                 return;
               }
-              await _databaseService.addTodoTask(
-                  title.text, description.text, selectedPriority, selectedDate);
+              await _databaseService.addTodoTask(title.text, description.text,
+                  selectedPriority, selectedDate, selectedTime);
             }
             Navigator.pop(context);
           },
@@ -200,8 +219,8 @@ class AddTaskState extends State<AddTaskScreen> {
                                 color: categories[index].color,
                               ),
                               title: Text(categories[index].name,
-                                  style: appStyle(
-                                      16, appTheme.whiteA700, FontWeight.normal)),
+                                  style: appStyle(16, appTheme.whiteA700,
+                                      FontWeight.normal)),
                             ),
                           );
                         },

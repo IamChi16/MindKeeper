@@ -4,8 +4,10 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:reminder_app/models/tasks_model.dart';
 import 'package:reminder_app/widgets/reusable_text.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../app/app_export.dart';
 import '../../models/subtask_model.dart';
+import '../../services/notification_service.dart';
 import '../../widgets/custom_elevated_button.dart';
 import '../../widgets/priority_widget.dart';
 
@@ -18,6 +20,7 @@ class EditTask extends StatefulWidget {
 }
 
 class _EditTaskState extends State<EditTask> {
+  final NotificationService _notificationService = NotificationService();
   final DatabaseService _databaseService = DatabaseService();
   User? user = FirebaseAuth.instance.currentUser;
   late String uid;
@@ -26,8 +29,13 @@ class _EditTaskState extends State<EditTask> {
   late TextEditingController subtaskTitle;
   DateTime selectedDate = DateTime.now();
   DateTime? pickedDate;
-  String selectedPriority = 'default';
+  late TimeOfDay selectedTime = TimeOfDay(
+    hour: int.parse(widget.task.time.split(":")[0]),
+    minute: int.parse(widget.task.time.split(":")[1]),
+  );
+  late String selectedPriority = widget.task.priority;
   bool isDone = false;
+  bool? isReminder = false;
 
   bool inSync = false;
   FocusNode titleFocusNode = FocusNode();
@@ -40,6 +48,19 @@ class _EditTaskState extends State<EditTask> {
     title = TextEditingController(text: widget.task.title);
     description = TextEditingController(text: widget.task.description);
     subtaskTitle = TextEditingController();
+    _loadReminderState();
+  }
+
+  Future<void> _loadReminderState() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isReminder = prefs.getBool('isReminder') ?? false;
+    });
+  }
+
+  Future<void> _saveReminderState(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool('isReminder', value); // Lưu giá trị vào SharedPreferences
   }
 
   @override
@@ -98,15 +119,29 @@ class _EditTaskState extends State<EditTask> {
                 );
                 return;
               }
-              _databaseService.updateTask(
-                widget.task.id,
-                title.text,
-                title.text,
-                widget.task.priority,
-                selectedDate,
-              );
+              setState(() {
+                inSync = true;
+              });
 
-              Navigator.pop(context);
+              try {
+                await _databaseService.updateTask(
+                    widget.task.id,
+                    title.text,
+                    description.text,
+                    selectedPriority,
+                    selectedDate,
+                    selectedTime);
+                Navigator.pop(context);
+              } catch (e) {
+                debugPrint("Error: $e");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to save task')),
+                );
+              } finally {
+                setState(() {
+                  inSync = false;
+                });
+              }
             },
             width: 100,
             textStyle: theme.textTheme.bodyLarge,
@@ -118,16 +153,13 @@ class _EditTaskState extends State<EditTask> {
         children: [
           Container(
               width: double.maxFinite,
-              padding: const EdgeInsets.only(left: 24, right: 24, top: 24),
+              padding: const EdgeInsets.only(left: 20, right: 20, top: 20),
               child: Column(
                 children: [
                   SizedBox(height: 20.h),
                   _buildTitle(title, titleFocusNode),
                   SizedBox(height: 30.h),
                   _buildDescription(description, descriptionFocusNode),
-                  SizedBox(height: 30.h),
-                  _buildSubTaskList(),
-                  _buildSubTask(),
                   SizedBox(height: 30.h),
                   Row(
                     children: [
@@ -156,6 +188,26 @@ class _EditTaskState extends State<EditTask> {
                             appStyle(16, appTheme.gray50001, FontWeight.normal),
                       ),
                       IconButton(
+                          onPressed: () async {
+                            final TimeOfDay? pickedTime = await showTimePicker(
+                              context: context,
+                              initialTime: selectedTime,
+                            );
+                            if (pickedTime != null) {
+                              setState(() {
+                                selectedTime = pickedTime;
+                              });
+                            }
+                          },
+                          icon: Icon(
+                            Icons.timer_rounded,
+                            color: appTheme.gray50001,
+                          )),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
                         onPressed: () {
                           _showPriorityDialog(context, widget.task);
                         },
@@ -168,8 +220,6 @@ class _EditTaskState extends State<EditTask> {
                                         ? appTheme.teal300
                                         : appTheme.gray50001),
                       ),
-                      Row(
-                    children: [
                       IconButton(
                         onPressed: () {
                           //_showCategoryDialog(context, widget.task);
@@ -179,13 +229,20 @@ class _EditTaskState extends State<EditTask> {
                           color: appTheme.gray50001,
                         ),
                       ),
+                      IconButton(
+                        onPressed: () {},
+                        icon: Icon(
+                          Icons.file_present_rounded,
+                          color: appTheme.gray50001,
+                        ),
+                      ),
                     ],
                   ),
-                    ],
-                  ),
-                  
-                  _buildAttachFile(),
                   SizedBox(height: 30.h),
+                  _buildNotiReminder(),
+                  SizedBox(height: 30.h),
+                  _buildSubTaskList(),
+                  _buildSubTask(),
                 ],
               )),
         ],
@@ -205,7 +262,6 @@ class _EditTaskState extends State<EditTask> {
         ),
         controller: title,
         focusNode: titleFocusNode,
-        autofocus: true,
       ),
     );
   }
@@ -237,6 +293,7 @@ class _EditTaskState extends State<EditTask> {
         decoration: InputDecoration(
           prefixIcon: Icon(Icons.add_rounded, color: appTheme.gray50001),
           hintText: "Sub Task",
+          hintStyle: TextStyle(color: appTheme.gray500),
           contentPadding: EdgeInsets.fromLTRB(20.h, 20.h, 12.h, 20.h),
         ),
         controller: subtaskTitle,
@@ -266,21 +323,21 @@ class _EditTaskState extends State<EditTask> {
               return Container(
                 color: appTheme.blackA700,
                 child: Slidable(
-                    key: ValueKey(subTask.id),
-                    endActionPane: ActionPane(
-                      motion: const DrawerMotion(),
-                      extentRatio: 0.2, // 20% of screen width
-                      children: [
+                  key: ValueKey(subTask.id),
+                  endActionPane: ActionPane(
+                    motion: const DrawerMotion(),
+                    extentRatio: 0.2, // 20% of screen width
+                    children: [
                       SlidableAction(
                         backgroundColor: appTheme.red500,
                         icon: Icons.delete_rounded,
                         onPressed: (context) {
-                        _databaseService.deleteSubTask(
-                          widget.task.id, subTask.id);
+                          _databaseService.deleteSubTask(
+                              widget.task.id, subTask.id);
                         },
                       ),
-                      ],
-                    ),
+                    ],
+                  ),
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: TextField(
@@ -322,21 +379,75 @@ class _EditTaskState extends State<EditTask> {
     );
   }
 
-  _buildAttachFile() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () {},
-          icon: Icon(
-            Icons.file_present_rounded,
-            color: appTheme.gray50001,
+  Future<void> _scheduleNotification() async {
+    final DateTime scheduledDate = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      selectedTime.hour,
+      selectedTime.minute,
+    );
+
+    if (scheduledDate.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Scheduled date and time must be in the future'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    print('Scheduled notification at: $scheduledDate');
+    await _notificationService.scheduleNotification(scheduledDate);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              "Notification scheduled successfully for ${DateFormat('EEE, d MMM yyyy HH:mm').format(scheduledDate.subtract(Duration(minutes: 5)))}"),
+          backgroundColor: Colors.greenAccent,
+        ),
+      );
+    }
+  }
+
+  _buildNotiReminder() {
+    return Container(
+      padding: const EdgeInsets.only(left: 15),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.notifications_none_rounded,
+                color: appTheme.gray50001,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Reminder',
+                style: appStyle(16, appTheme.gray50001, FontWeight.normal),
+              ),
+            ],
           ),
-        ),
-        ReusableText(
-          text: "Attach Files",
-          style: appStyle(16, appTheme.gray50001, FontWeight.normal),
-        ),
-      ],
+          const SizedBox(width: 10),
+          Switch(
+            value: isReminder ?? false,
+            onChanged: (value) {
+              setState(() {
+                isReminder = value;
+                _saveReminderState(isReminder!); // Lưu giá trị khi thay đổi
+                if (isReminder == true) {
+                  _scheduleNotification();
+                } else {
+                  _notificationService.cancelNotification();
+                }
+              });
+            },
+          ),
+        ],
+      ),
     );
   }
 //   void _showCategoryDialog(BuildContext context, Task task) async {
@@ -354,5 +465,4 @@ class _EditTaskState extends State<EditTask> {
 //     },
 //   );
 // }
-
 }

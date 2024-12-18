@@ -18,7 +18,7 @@ class CustomContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: width,
-      height: 100,
+      height: height,
       child: Container(
         width: width,
         height: height,

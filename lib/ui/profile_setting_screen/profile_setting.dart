@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:reminder_app/ui/profile_setting_screen/account_details.dart';
 import 'package:reminder_app/widgets/custom_container.dart';
 import '../../app/app_export.dart';
 import '../../widgets/reusable_text.dart';
@@ -60,7 +61,7 @@ class _ProfileSettingState extends State<ProfileSetting> {
         leading: IconButton(
             iconSize: 25,
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(context, true);
             },
             icon: Icon(
               Icons.close,
@@ -82,6 +83,16 @@ class _ProfileSettingState extends State<ProfileSetting> {
               backgroundColor: appTheme.blackA700,
               child: _buildProfileSetting(),
             ),
+            const SizedBox(height: 20),
+            CustomContainer(
+              width: double.maxFinite,
+              backgroundColor: appTheme.blackA700,
+              child: Column(
+                children: [
+                  _buildSettingItem(),
+                ],
+              ),
+            )
           ],
         ),
       ),
@@ -92,12 +103,20 @@ class _ProfileSettingState extends State<ProfileSetting> {
     return InkWell(
       onTap: () {
         setState(() {
-          Navigator.pushNamed(context, AppRoutes.accountDetails);
+          Navigator.of(context)
+              .push(MaterialPageRoute(
+                  builder: (context) => const AccountDetails()))
+              .then((value) {
+            if (value == true) {
+              _loadUserProfile();
+            }
+          });
         });
       },
       child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -133,52 +152,69 @@ class _ProfileSettingState extends State<ProfileSetting> {
                   Icon(Icons.arrow_forward_ios, color: appTheme.whiteA700),
                 ],
               ),
-              Row(
-                children: [
-                  ReusableText(
-                      text: "Change theme",
-                      style: theme.textTheme.bodyLarge ?? const TextStyle()),
-                  // Switch(
-                  //   value:
-                  //       ThemeHelper().themeData().brightness == Brightness.dark,
-                  //   onChanged: (value) {
-                  //     ThemeHelper().changeTheme(value ? 'darkCode' : 'lightCode');
-                  //     setState(
-                  //         () {});
-                  //   },
-                  // )
-                ],
-              ),
-              Row(
-                children: [
-                  ReusableText(
-                      text: "Change language",
-                      style: theme.textTheme.bodyLarge ?? const TextStyle()),
-                  // Switch(
-                  //   value: ThemeHelper().themeData().brightness == Brightness.dark,
-                  //   onChanged: (value) {
-                  //     ThemeHelper().changeTheme(value ? 'darkCode' : 'lightCode');
-                  //     setState(
-                  //         () {});
-                  //   },
-                  // )
-                ],
-              ),
-              Row(children: [
-                ReusableText(
-                    text: "Task in a week",
-                    style: theme.textTheme.bodyLarge ?? const TextStyle()),
-                // Switch(
-                //   value: ThemeHelper().themeData().brightness == Brightness.dark,
-                //   onChanged: (value) {
-                //     ThemeHelper().changeTheme(value ? 'darkCode' : 'lightCode');
-                //     setState(
-                //         () {});
-                //   },
-                // )
-              ]),
             ],
           )),
+    );
+  }
+
+  _buildSettingItem() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ReusableText(
+                  text: "Theme",
+                  style: TextStyle(
+                      fontSize: 20,
+                      color: appTheme.whiteA700,
+                      fontWeight: FontWeight.normal)),
+              Switch(
+                value: ThemeHelper().themeData().brightness == Brightness.dark,
+                onChanged: (value) {
+                  ThemeHelper().changeTheme(value ? 'darkCode' : 'lightCode');
+                  setState(() {});
+                },
+              )
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ReusableText(
+                  text: "Language",
+                  style: TextStyle(
+                      fontSize: 20,
+                      color: appTheme.whiteA700,
+                      fontWeight: FontWeight.normal)),
+              Switch(
+                value: ThemeHelper().themeData().brightness == Brightness.dark,
+                onChanged: (value) {
+                  setState(() {});
+                },
+              )
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            ReusableText(
+                text: "This week",
+                style: TextStyle(
+                    fontSize: 20,
+                    color: appTheme.whiteA700,
+                    fontWeight: FontWeight.normal)),
+            Switch(
+              value: ThemeHelper().themeData().brightness == Brightness.dark,
+              onChanged: (value) {
+                setState(() {});
+              },
+            )
+          ]),
+        ],
+      ),
     );
   }
 }

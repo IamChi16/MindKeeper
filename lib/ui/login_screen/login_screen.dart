@@ -294,10 +294,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  onTapArrowLeftone(BuildContext context) {
-    Navigator.pop(context);
-  }
-
   _logIn() async {
     String res =
         await auth.loginUser(email: _email.text, password: _password.text);

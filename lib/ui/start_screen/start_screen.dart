@@ -21,7 +21,6 @@ class _StartScreenState extends State<StartScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () {
-            onTapArrowLeftone(context);
           },
         ),
       ),
@@ -87,9 +86,5 @@ class _StartScreenState extends State<StartScreen> {
         ],
       ),
     ));
-  }
-
-  onTapArrowLeftone(BuildContext context) {
-    Navigator.pop(context);
   }
 }

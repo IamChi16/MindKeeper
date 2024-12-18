@@ -74,7 +74,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
                 );
               }
             },
-            width: 100,
+            width: 50,
             textStyle: theme.textTheme.bodyLarge,
             buttonStyle: CustomButton.none,
           )

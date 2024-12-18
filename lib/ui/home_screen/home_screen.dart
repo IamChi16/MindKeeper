@@ -94,8 +94,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         InkWell(
                           onTap: () {
-                            Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) => const ProfileSetting()));
+                            Navigator.of(context)
+                                .push(MaterialPageRoute(
+                                    builder: (context) => const ProfileSetting()))
+                                .then((value) {
+                              if (value == true) {
+                                _loadUserProfile();
+                              }
+                            });
                           },
                           child: _photoBase64 != null
                               ? CircleAvatar(
@@ -227,14 +233,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 MaterialPageRoute(builder: (context) => const TodayTask()));
           },
         ),
-        // SizedBox(
-        //   width: 25,
-        //   height: 25,
-        //   child: GestureDetector(
-        //     onTap: () {},
-        //     child: Icon(Icons.add, color: appTheme.indigo20001, size: 20),
-        //   ),
-        // ),
+        StreamBuilder(
+          stream: Stream.fromFuture(_databaseService.countTodayPendingTasks()),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Text(
+                '${snapshot.data}',
+                style: appStyle(13, appTheme.blueGray100, FontWeight.normal),
+              );
+            } else {
+              return const CircularProgressIndicator();
+            }
+          },
+        ),
       ],
     );
   }
@@ -259,14 +270,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 MaterialPageRoute(builder: (context) => const TomorrowTask()));
           },
         ),
-        // SizedBox(
-        //   width: 25,
-        //   height: 25,
-        //   child: GestureDetector(
-        //     onTap: () {},
-        //     child: Icon(Icons.add, color: appTheme.indigo20001, size: 20),
-        //   ),
-        // ),
+        StreamBuilder(
+          stream:
+              Stream.fromFuture(_databaseService.countTomorrowPendingTasks()),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Text(
+                '${snapshot.data}',
+                style: appStyle(13, appTheme.blueGray100, FontWeight.normal),
+              );
+            } else {
+              return const CircularProgressIndicator();
+            }
+          },
+        ),
       ],
     );
   }
@@ -290,14 +307,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 MaterialPageRoute(builder: (context) => const PendingTask()));
           },
         ),
-        // SizedBox(
-        //   width: 25,
-        //   height: 25,
-        //   child: GestureDetector(
-        //     onTap: () {},
-        //     child: Icon(Icons.add, color: appTheme.indigo20001, size: 20),
-        //   ),
-        // ),
+        StreamBuilder(
+          stream: Stream.fromFuture(_databaseService.countPendingTasks()),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Text(
+                '${snapshot.data}',
+                style: appStyle(13, appTheme.blueGray100, FontWeight.normal),
+              );
+            } else {
+              return const CircularProgressIndicator();
+            }
+          },
+        ),
       ],
     );
   }
@@ -322,14 +344,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 MaterialPageRoute(builder: (context) => const CompletedTask()));
           },
         ),
-        // SizedBox(
-        //   width: 25,
-        //   height: 25,
-        //   child: GestureDetector(
-        //     onTap: () {},
-        //     child: Icon(Icons.add, color: appTheme.indigo20001, size: 20),
-        //   ),
-        // ),
       ],
     );
   }
@@ -340,20 +354,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CustomElevatedButton(
-          alignment: Alignment.topLeft,
-          width: 140,
-          text: "Calendar",
-          textStyle: appStyle(16, appTheme.blueGray100, FontWeight.bold),
-          buttonStyle: CustomButton.none,
-          leftIcon: Icon(
-            Icons.calendar_month_rounded,
-            color: appTheme.teal3001,
-          ),
-          onPressed: (){
-            Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const CalendarView()));
-          }
-        ),
+            alignment: Alignment.topLeft,
+            width: 140,
+            text: "Calendar",
+            textStyle: appStyle(16, appTheme.blueGray100, FontWeight.bold),
+            buttonStyle: CustomButton.none,
+            leftIcon: Icon(
+              Icons.calendar_month_rounded,
+              color: appTheme.teal3001,
+            ),
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const CalendarView()));
+            }),
       ],
     );
   }
@@ -529,4 +542,4 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       },
     );
   }
-} 
+}

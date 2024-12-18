@@ -96,10 +96,18 @@ class TaskItem extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Icon(
-                        Icons.flag_rounded,
+                        Icons.timer_rounded,
                         size: 20,
                         color: _getPriorityColor(task.priority),
                       ),
+                      Text(
+                        task.time,
+                        style: appStyle(
+                          12,
+                          appTheme.whiteA700,
+                          FontWeight.normal,
+                        ),
+                      )
                     ],
                   ),
                   const SizedBox(height: 10),

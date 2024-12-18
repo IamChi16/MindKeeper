@@ -34,7 +34,7 @@ class _ChartScreenState extends State<ChartScreen> {
           actions: [
             IconButton(
               icon: Icon(
-                Icons.data_saver_off_rounded,
+                Icons.insert_chart_outlined_outlined,
                 color: Colors.grey[500],
               ),
               onPressed: () {},

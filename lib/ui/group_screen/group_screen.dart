@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:reminder_app/models/group_model.dart';
+import 'package:reminder_app/services/group_service.dart';
 import '../../app/app_export.dart';
 import '../../widgets/reusable_text.dart';
-import 'add_group_screen.dart';
-import 'edit_group_screen.dart';
+import 'widget/group_widget.dart';
 
 class GroupScreen extends StatefulWidget {
+  
   const GroupScreen({super.key});
 
   @override
@@ -14,9 +15,10 @@ class GroupScreen extends StatefulWidget {
 }
 
 bool show = true;
-
+List membersList = [];
 class _GroupScreenState extends State<GroupScreen> {
-  final DatabaseService _databaseService = DatabaseService();
+  Group? group;
+  final GroupService _groupService = GroupService();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,9 +45,7 @@ class _GroupScreenState extends State<GroupScreen> {
             ),
             IconButton(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return AddGroupScreen();
-                  }));
+                  _showGroupDialog(context, group: group);
                 },
                 icon: Icon(
                   Icons.add,
@@ -84,7 +84,7 @@ class _GroupScreenState extends State<GroupScreen> {
 
   _groupView() {
     return StreamBuilder(
-        stream: _databaseService.groups,
+        stream: _groupService.getGroups(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             List<Group> groupList = snapshot.data!;
@@ -97,42 +97,59 @@ class _GroupScreenState extends State<GroupScreen> {
                 return GestureDetector(
                   onTap: () {
                     Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EditGroupScreen(group: group),
-                      ),
-                    );
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => GroupWidget(
+                                  group: group,
+                                )));
                   },
                   child: Slidable(
-                    endActionPane:
-                      ActionPane(motion: const DrawerMotion(), extentRatio: 0.2 ,children: [
-                      SlidableAction(
-                        onPressed: (context) {
-                          _databaseService.deleteGroup(group.id);
-                        },
-                        icon: Icons.delete,
-                        foregroundColor: appTheme.red500,
-                        backgroundColor: appTheme.blackA700,
-                        label: 'Delete',
-                      ),
-                    ],
+                    endActionPane: ActionPane(
+                      motion: const DrawerMotion(),
+                      extentRatio: 0.4,
+                      children: [
+                        SlidableAction(
+                          onPressed: (context) {
+                            _showGroupDialog(context, group: group);
+                          },
+                          icon: Icons.edit,
+                          foregroundColor: appTheme.indigo30001,
+                          backgroundColor: appTheme.blackA700,
+                          label: 'Edit',
+                        ),
+                        SlidableAction(
+                          onPressed: (context) {
+                            _groupService.deleteGroup(group.id);
+                          },
+                          icon: Icons.delete,
+                          foregroundColor: appTheme.red500,
+                          backgroundColor: appTheme.blackA700,
+                          label: 'Delete',
+                        ),
+                      ],
                     ),
                     child: Card(
                       color: appTheme.blackA700,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      child: ListTile(
-                        title: Text(
-                          group.name,
-                          style:
-                              appStyle(16, appTheme.whiteA700, FontWeight.w600),
+                      child: Padding(
+                        padding: EdgeInsets.all(20.h),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: appTheme.indigo30001,
+                              child: Text(
+                                group.name[0],
+                                style: appStyle(16, appTheme.whiteA700,
+                                    FontWeight.normal),
+                              ),
+                            ),
+                            SizedBox(width: 20.h),
+                            ReusableText(
+                              text: group.name,
+                              style: appStyle(16, appTheme.whiteA700,
+                                  FontWeight.normal),
+                            ),
+                          ],
                         ),
-                        subtitle: Text(
-                          group.description,
-                          style:
-                              appStyle(14, appTheme.gray400, FontWeight.normal),
-                        ),
-                        trailing: Icon(Icons.arrow_forward_ios,
-                            color: appTheme.whiteA700),
                       ),
                     ),
                   ),
@@ -143,5 +160,90 @@ class _GroupScreenState extends State<GroupScreen> {
             return Container();
           }
         });
+  }
+
+  _showGroupDialog(BuildContext context, {Group? group}) {
+    final TextEditingController _nameController =
+        TextEditingController(text: group?.name);
+    final TextEditingController _descriptionController = TextEditingController(
+      text: group?.description,
+    );
+    final List<Map<String, dynamic>> membersList = [];
+
+    //if group is not null then it is edit mode
+    //else it is add mode
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: appTheme.blackA700,
+          title: Text(
+            group == null ? "Add Group" : "Edit Group",
+            style: appStyle(18, appTheme.whiteA700, FontWeight.w600),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(height: 24.h),
+              TextField(
+                controller: _nameController,
+                style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
+                decoration: InputDecoration(
+                  label: Text("Name",
+                      style: appStyle(16, appTheme.gray400, FontWeight.normal)),
+                  border: const OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              SizedBox(height: 24.h),
+              TextField(
+                controller: _descriptionController,
+                style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                  ),
+                  label: Text("Description",
+                      style: appStyle(16, appTheme.gray400, FontWeight.normal)),
+                ),
+              ),       
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                "Cancel",
+                style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(100, 40),
+                backgroundColor: appTheme.indigo30001,
+              ),
+              onPressed: () {
+                if (group == null) {
+                  _groupService.addGroup(membersList,
+                      _nameController.text, _descriptionController.text);
+                } else {
+                  _groupService.updateGroup(
+                      group.id, _nameController.text, _descriptionController.text);
+                }
+                Navigator.pop(context);
+              },
+              child: Text(
+                group == null ? "Add" :
+                "Save",
+                style: appStyle(16, appTheme.whiteA700, FontWeight.normal),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

@@ -1,54 +1,65 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:reminder_app/models/group_model.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/member_model.dart';
 
 class GroupService {
-  final CollectionReference notificationsCollection =
-      FirebaseFirestore.instance.collection('notifications');
-
   final CollectionReference taskCollection =
       FirebaseFirestore.instance.collection('tasks');
 
   final CollectionReference groupCollection =
       FirebaseFirestore.instance.collection('groups');
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
- final CollectionReference userCollection =
-      FirebaseFirestore.instance.collection('users');
-
-  User? user = FirebaseAuth.instance.currentUser;
+  String groupId = Uuid().v1();
 
   //add Group
-  Future<DocumentReference> createGroup(String name, String description) async {
-    return await groupCollection.add({
-      'uid': user!.uid,
-      'name': name,
-      'description': description,
+  Future<void> addGroup(List<Map<String, dynamic>> membersList,
+      String groupName, String description) async {
+    List<Map<String, dynamic>> membersList = [
+      {
+        "uid": _auth.currentUser!.uid,
+        "name": _auth.currentUser!.displayName,
+        "email": _auth.currentUser!.email,
+        "isAdmin": true,
+      }
+    ];
+
+    await _firestore.collection('groups').doc(groupId).set({
+      "members": membersList,
+      "id": groupId,
+      "name": groupName,
+      "description": description,
+    });
+
+    for (int i = 0; i < membersList.length; i++) {
+      String uid = membersList[i]['uid'];
+
+      await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('groups')
+          .doc(groupId)
+          .set({
+        "id": groupId,
+      });
+    }
+
+    await _firestore.collection('groups').doc(groupId).collection('chats').add({
+      "message": "${_auth.currentUser!.displayName} Created This Group.",
+      "type": "notify",
     });
   }
 
   //get group
-  Stream<Group> getGroup(String id) {
-    return groupCollection.doc(id).snapshots().map(_groupFromSnapshot);
-  }
-
-  Group _groupFromSnapshot(DocumentSnapshot snapshot) {
-    return Group(
-      id: snapshot.id,
-      name: snapshot['name'] ?? '',
-      description: snapshot['description'] ?? '',
-    );
-  }
 
   //update Group
   Future<void> updateGroup(String id, String name, String description) async {
-    final updateGroupCollection =
-        FirebaseFirestore.instance.collection('groups').doc(id);
-    return await updateGroupCollection.update({
+    return await groupCollection.doc(id).update({
       'name': name,
       'description': description,
     });
@@ -62,136 +73,38 @@ class GroupService {
         .delete();
   }
 
-  //get groups
-  Stream<List<Group>> get groups {
-    return groupCollection
-        .where('uid', isEqualTo: user!.uid)
-        .snapshots()
-        .map(_groupListFromSnapshot);
-  }
+  Stream<List<Group>> getGroups() {
+    return groupCollection.snapshots().map(_groupListFromSnapshot);
+}
 
-  List<Group> _groupListFromSnapshot(QuerySnapshot snapshot) {
-    return snapshot.docs.map((doc) {
-      return Group(
-        id: doc.id,
-        name: doc['name'] ?? '',
-        description: doc['description'] ?? '',
-      );
-    }).toList();
-  }
-
-  //add member
-  Future<void> addMemberToGroup(
-      BuildContext context, String groupId, String email) async {
-    try {
-      // Check if the user exists
-      String? userId = await getUserIdByEmail(email);
-      if (userId != null) {
-        // Send in-app notification to the registered user
-        await sendInAppNotification(userId, groupId);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Invitation sent to $email')),
-        );
-      } else {
-        // Show message if the email is not registered
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('The email $email is not registered in the app.')),
-        );
-      }
-    } catch (e) {
-      print("Error adding member: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred. Please try again.')),
-      );
-    }
-  }
-
-  Future<String?> getUserIdByEmail(String email) async {
-    var query = await userCollection.where('email', isEqualTo: email).get();
-    if (query.docs.isNotEmpty) {
-      return query.docs.first.id; // Return the user ID
-    }
-    return null; // User not found
-  }
-
-// Mock function to send in-app notification
-  Future<void> sendInAppNotification(String userId, String groupId) async {
-    // Implement in-app notification logic
-    await notificationsCollection.add({
-      'userId': userId,
-      'groupId': groupId,
-      'message': 'You have been invited to join a group.',
-      'status': 'pending',
-    });
-  }
-
-  Future<void> sendFCMNotification(
-      String userId, String title, String body) async {
-    final userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    String? deviceToken = userDoc.data()?['deviceToken'];
-
-    if (deviceToken == null) {
-      throw Exception('User does not have a registered device token.');
-    }
-
-    const String serverKey = 'YOUR_SERVER_KEY';
-    final Uri fcmUrl = Uri.parse('https://fcm.googleapis.com/fcm/send');
-
-    final response = await http.post(
-      fcmUrl,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'key=$serverKey',
-      },
-      body: '''
-    {
-      "to": "$deviceToken",
-      "notification": {
-        "title": "$title",
-        "body": "$body"
-      }
-    }
-    ''',
+List<Group> _groupListFromSnapshot(QuerySnapshot snapshot) {
+  return snapshot.docs.map((doc) {
+    return Group(
+      id: doc.id,
+      name: doc['name'] ?? '',
+      description: doc['description'] ?? '',
     );
+  }).toList();
+}
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to send FCM notification: ${response.body}');
-    }
-  }
-
-  Future<void> sendEmailInvitation(String email, String groupName) async {
-    final emailData = {
-      'to': email,
-      'message': {
-        'subject': 'Invitation to join our app',
-        'text':
-            'You have been invited to join the group $groupName in our app.',
-      },
-    };
-
-    await FirebaseFirestore.instance.collection('mail').add(emailData);
-  }
-
-  // Future<void> saveDeviceToken(String userId) async {
-  //   String? token = await FirebaseMessaging.instance.getToken();
-  //   if (token != null) {
-  //     await FirebaseFirestore.instance.collection('users').doc(userId).update({
-  //       'deviceToken': token,
-  //     });
-  //   }
-  // }
 
   //update member role
   Future<void> updateMemberRole(
       String groupId, String memberId, String role) async {
     try {
-      await groupCollection
-          .doc(groupId)
-          .collection('members')
-          .doc(memberId)
-          .update({'role': role});
+      DocumentSnapshot groupSnapshot = await groupCollection.doc(groupId).get();
+      List members = groupSnapshot['members'];
+
+      // Cập nhật vai trò của thành viên trong danh sách
+      for (var member in members) {
+        if (member['uid'] == memberId) {
+          member['role'] = role;
+          break;
+        }
+      }
+
+      // Ghi danh sách cập nhật lại Firestore
+      await groupCollection.doc(groupId).update({'members': members});
     } catch (e) {
       throw Exception('Failed to update member role: $e');
     }
@@ -243,7 +156,6 @@ class GroupService {
         throw Exception('Title cannot be empty');
       }
       return await groupCollection.doc(groupId).collection('todos').add({
-        'uid': user!.uid,
         'title': title,
         'description': description,
         'priority': priority,
@@ -280,5 +192,4 @@ class GroupService {
       'order': order,
     });
   }
-
 }

@@ -113,15 +113,13 @@ class TaskItem extends StatelessWidget {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      ReusableText(
-                        text: task.description,
-                        style: appStyle(
-                          15,
-                          appTheme.whiteA700,
-                          FontWeight.normal,
-                        ),
-                      ),
-                      const SizedBox(width: 15),
+                      task.description.isNotEmpty
+                          ? Icon(
+                              Icons.description_rounded,
+                              color: _getPriorityColor(task.priority),
+                              size: 20,
+                            )
+                          : const SizedBox(),
                       Icon(
                         Icons.calendar_month_rounded,
                         color: _getPriorityColor(task.priority),

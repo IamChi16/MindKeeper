@@ -1,0 +1,45 @@
+name: mind_keeper
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_timezone: ^4.1.0
+  timezone: ^0.10.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.10+1
+  smooth_page_indicator: ^1.2.0+3
+  connectivity_plus: ^6.0.4
+  flutter_riverpod: ^2.5.1
+  firebase_auth: ^5.3.1
+  firebase_core: ^3.8.0
+  equatable: ^2.0.5
+  shared_preferences: ^2.3.0
+  cloud_firestore: ^5.4.2
+  google_sign_in: ^6.2.1
+  get: ^4.6.5
+  image_picker: ^1.1.2
+  provider: ^6.1.2
+  flutter_slidable: ^3.1.1
+  flutter_spinkit: ^5.2.1
+  flutter_colorpicker:
+  table_calendar: ^3.1.2
+  firebase_messaging: ^15.1.5
+  uuid: 4.5.1
+  flutter_local_notifications: ^18.0.1
+  syncfusion_flutter_charts: ^27.2.5
+  syncfusion_flutter_gauges: ^27.2.5
+  permission_handler: ^11.3.1
+
+flutter:
+  uses-material-design: true
